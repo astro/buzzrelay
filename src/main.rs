@@ -7,6 +7,7 @@ use axum::{
     Form, Json, RequestExt, Router,
 };
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use sigh::{PrivateKey, PublicKey, alg::{RsaSha256, Algorithm}, Key};
 use std::{net::SocketAddr, sync::Arc};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -17,6 +18,9 @@ mod send;
 pub use send::send;
 mod activitypub;
 mod endpoint;
+
+const ACTOR_ID: &str = "https://relay.fedi.buzz/actor";
+const ACTOR_KEY: &str = "https://relay.fedi.buzz/actor#key";
 
 #[derive(Debug, Clone)]
 struct State {
@@ -32,22 +36,25 @@ impl FromRef<State> for Arc<reqwest::Client> {
     }
 }
 
-async fn actor(axum::extract::State(state): axum::extract::State<State>) -> impl IntoResponse {
-    let id = "https://relay.fedi.buzz/".to_string();
-    Json(activitypub::Actor {
-        jsonld_context: serde_json::Value::String(
-            "https://www.w3.org/ns/activitystreams".to_string()
-        ),
-        actor_type: "Application".to_string(),
-        id: id.clone(),
-        inbox: id.clone(),
-        outbox: id.clone(),
-        public_key: activitypub::ActorPublicKey {
-            id: id.clone(),
-            owner: Some(id),
-            pem: state.public_key.to_pem().unwrap(),
-        },
-    })
+async fn actor(axum::extract::State(state): axum::extract::State<State>) -> Response {
+    let id = ACTOR_ID.to_string();
+    ([("content-type", "application/activity+json")],
+     Json(activitypub::Actor {
+         jsonld_context: json!([
+             "https://www.w3.org/ns/activitystreams",
+             "https://w3id.org/security/v1",
+         ]),
+         actor_type: "Service".to_string(),
+         id: id.clone(),
+         inbox: "https://relay.fedi.buzz/inbox".to_string(),
+         // outbox: "https://relay.fedi.buzz/outbox".to_string(),
+         public_key: activitypub::ActorPublicKey {
+             id: ACTOR_KEY.to_string(),
+             owner: Some(id.clone()),
+             pem: state.public_key.to_pem().unwrap(),
+         },
+         preferredUsername: Some("buzzrelay".to_string()),
+     })).into_response()
 }
 
 async fn handler(
@@ -69,21 +76,24 @@ async fn handler(
         tokio::spawn(async move {
             let accept = activitypub::Action {
                 action_type: "Accept".to_string(),
-                actor: "https://relay.fedi.buzz/".to_string(),
+                actor: ACTOR_ID.to_string(),
                 to: Some(endpoint.actor.id),
                 object: Some(endpoint.payload),
             };
             dbg!(serde_json::to_string_pretty(&accept));
             send::send(
                 client.as_ref(), &endpoint.actor.inbox,
-                "https://relay.fedi.buzz/",
+                ACTOR_KEY,
                 &private_key,
                 accept,
             ).await
                 .map_err(|e| tracing::error!("post: {}", e));
         });
         
-        StatusCode::OK.into_response()
+        (StatusCode::CREATED,
+         [("content-type", "application/activity+json")],
+         "{}"
+        ).into_response()
     } else {
         (StatusCode::BAD_REQUEST, "Not a recognized request").into_response()
     }
@@ -103,7 +113,8 @@ async fn main() {
     let (private_key, public_key) = RsaSha256.generate_keys().unwrap();
 
     let app = Router::new()
-        .route("/", get(actor).post(handler))
+        .route("/actor", get(actor))
+        .route("/relay", post(handler))
         .with_state(State {
             client: Arc::new(reqwest::Client::new()),
             private_key, public_key,

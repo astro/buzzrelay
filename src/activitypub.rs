@@ -8,9 +8,11 @@ pub struct Actor {
     pub actor_type: String,
     pub id: String,
     pub inbox: String,
-    pub outbox: String,
+    // pub outbox: String,
     #[serde(rename = "publicKey")]
     pub public_key: ActorPublicKey,
+    #[serde(rename = "preferredUsername")]
+    pub preferredUsername: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
