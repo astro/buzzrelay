@@ -85,7 +85,6 @@ where
         // mastodon uses base64::alphabet::STANDARD, not base64::alphabet::URL_SAFE
         digest_header = digest_header.replace("+", "-")
             .replace("/", "_");
-        dbg!(&digest_header);
         let digest: DigestHeader = digest_header.parse()
             .map_err(|e| (StatusCode::BAD_REQUEST, format!("Cannot parse Digest: header: {}", e)))?;
         // read body

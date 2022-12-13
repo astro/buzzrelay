@@ -26,8 +26,11 @@ pub struct ActorPublicKey {
 /// ActivityPub "activity"
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Action<O> {
+    #[serde(rename = "@context")]
+    pub jsonld_context: serde_json::Value,
     #[serde(rename = "type")]
     pub action_type: String,
+    pub id: String,
     pub actor: String,
     pub to: Option<String>,
     pub object: Option<O>,

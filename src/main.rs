@@ -17,6 +17,7 @@ pub use fetch::fetch;
 mod send;
 pub use send::send;
 mod activitypub;
+mod webfinger;
 mod endpoint;
 
 const ACTOR_ID: &str = "https://relay.fedi.buzz/actor";
@@ -61,6 +62,7 @@ async fn handler(
     axum::extract::State(state): axum::extract::State<State>,
     endpoint: endpoint::Endpoint,
 ) -> Response {
+    dbg!(&endpoint);
     let action = match serde_json::from_value::<activitypub::Action<serde_json::Value>>(endpoint.payload.clone()) {
         Ok(action) => action,
         Err(e) => return (
@@ -68,29 +70,29 @@ async fn handler(
             format!("Bad action: {:?}", e)
         ).into_response(),
     };
-    dbg!(&action);
     
     if action.action_type == "Follow" {
         let private_key = state.private_key.clone();
         let client = state.client.clone();
         tokio::spawn(async move {
             let accept = activitypub::Action {
+                jsonld_context: serde_json::Value::String("https://www.w3.org/ns/activitystreams".to_string()),
                 action_type: "Accept".to_string(),
                 actor: ACTOR_ID.to_string(),
-                to: Some(endpoint.actor.id),
+                to: Some(endpoint.actor.id.clone()),
+                id: action.id,
                 object: Some(endpoint.payload),
             };
-            dbg!(serde_json::to_string_pretty(&accept));
             send::send(
                 client.as_ref(), &endpoint.actor.inbox,
                 ACTOR_KEY,
                 &private_key,
                 accept,
             ).await
-                .map_err(|e| tracing::error!("post: {}", e));
+                .map_err(|e| tracing::error!("post accept: {}", e));
         });
         
-        (StatusCode::CREATED,
+        (StatusCode::ACCEPTED,
          [("content-type", "application/activity+json")],
          "{}"
         ).into_response()
@@ -115,6 +117,7 @@ async fn main() {
     let app = Router::new()
         .route("/actor", get(actor))
         .route("/relay", post(handler))
+        .route("/.well-known/webfinger", get(webfinger::webfinger))
         .with_state(State {
             client: Arc::new(reqwest::Client::new()),
             private_key, public_key,
