@@ -8,14 +8,16 @@ axum = "0.6"
 axum-macros = "0.3"
 axum-extra = { version = "0.4", features = ["spa"] }
 askama = "0.11"
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1", features = ["full", "time"] }
 tracing = "*"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 serde = "1"
 serde_json = "1"
-reqwest = { version = "0.11", features = ["json"] }
+reqwest = { version = "0.11", features = ["json", "stream"] }
 sigh = { path = "../rust-sigh" }
 http_digest_headers = { version="0.1.0", default-features = false, features = ["use_openssl"] }
 thiserror = "1"
 http = "0.2"
 chrono = "0.4"
+eventsource-stream = "0.2"
+futures = "0.3"

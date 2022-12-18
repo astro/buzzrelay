@@ -1,5 +1,7 @@
+use futures::StreamExt;
 use http::StatusCode;
 use http_digest_headers::{DigestHeader, DigestMethod};
+use reqwest::Body;
 use serde::Serialize;
 use sigh::{PrivateKey, SigningConfig, alg::RsaSha256};
 
@@ -57,7 +59,8 @@ pub async fn send<T: Serialize>(
         .map_err(SendError::HttpReq)?;
     SigningConfig::new(RsaSha256, private_key, key_id)
         .sign(&mut req)?;
-    let res = client.execute(req.try_into()?)
+    let req: reqwest::Request = req.try_into()?;
+    let res = client.execute(req)
         .await?;
     if res.status() >= StatusCode::OK && res.status() < StatusCode::MULTIPLE_CHOICES {
         Ok(())
