@@ -122,6 +122,13 @@ pub fn spawn(
                             &key_id, &private_key_, body_
                         ).await {
                             tracing::error!("relay::send {:?}", e);
+                        } else {
+                            // success
+                            systemd::daemon::notify(
+                                false, [
+                                    (systemd::daemon::STATE_WATCHDOG, "1")
+                                ].iter()
+                            ).unwrap();
                         }
                     });
                 }

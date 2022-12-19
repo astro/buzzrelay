@@ -255,10 +255,13 @@ async fn main() {
         });
 
     let addr = SocketAddr::from(([127, 0, 0, 1], config.listen_port));
+    let server = axum::Server::bind(&addr)
+        .serve(app.into_make_service());
+
     tracing::info!("serving on {}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await
+    systemd::daemon::notify(false, [(systemd::daemon::STATE_READY, "1")].iter())
+        .unwrap();
+    server.await
         .unwrap();
 }
 
