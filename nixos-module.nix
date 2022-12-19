@@ -38,7 +38,7 @@
           listen_port = cfg.listenPort;
           priv_key_file = cfg.privKeyFile;
           pub_key_file = cfg.pubKeyFile;
-          db = "host=localhost dbname=${cfg.database}";
+          db = "host=localhost user=${cfg.user} dbname=${cfg.database}";
         });
     in
       lib.mkIf cfg.enable {
