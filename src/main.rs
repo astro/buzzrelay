@@ -84,10 +84,9 @@ async fn get_tag_actor(
     axum::extract::State(state): axum::extract::State<State>,
     Path(tag): Path<String>
 ) -> Response {
-    // TODO: downcase
     let target = actor::Actor {
         host: state.hostname.clone(),
-        kind: actor::ActorKind::TagRelay(tag),
+        kind: actor::ActorKind::TagRelay(tag.to_lowercase()),
     };
     target.as_activitypub(&state.pub_key)
         .into_response()
@@ -97,10 +96,9 @@ async fn get_instance_actor(
     axum::extract::State(state): axum::extract::State<State>,
     Path(instance): Path<String>
 ) -> Response {
-    // TODO: downcase
     let target = actor::Actor {
         host: state.hostname.clone(),
-        kind: actor::ActorKind::InstanceRelay(instance),
+        kind: actor::ActorKind::InstanceRelay(instance.to_lowercase()),
     };
     target.as_activitypub(&state.pub_key)
         .into_response()
@@ -111,10 +109,9 @@ async fn post_tag_relay(
     Path(tag): Path<String>,
     endpoint: endpoint::Endpoint
 ) -> Response {
-    // TODO: downcase
     let target = actor::Actor {
         host: state.hostname.clone(),
-        kind: actor::ActorKind::TagRelay(tag),
+        kind: actor::ActorKind::TagRelay(tag.to_lowercase()),
     };
     post_relay(state, endpoint, target).await
 }
@@ -124,10 +121,9 @@ async fn post_instance_relay(
     Path(instance): Path<String>,
     endpoint: endpoint::Endpoint
 ) -> Response {
-    // TODO: downcase
     let target = actor::Actor {
         host: state.hostname.clone(),
-        kind: actor::ActorKind::InstanceRelay(instance),
+        kind: actor::ActorKind::InstanceRelay(instance.to_lowercase()),
     };
     post_relay(state, endpoint, target).await
 }
@@ -145,8 +141,6 @@ async fn post_relay(
             format!("Bad action: {:?}", e)
         ).into_response(),
     };
-    // endpoint.actor.inbox
-    // endpoint.actor.id
 
     if action.action_type == "Follow" {
         let priv_key = state.priv_key.clone();
