@@ -71,7 +71,7 @@ pub async fn send_raw(
         .header("digest", digest_header)
         .body(body.as_ref().clone())
         .map_err(SendError::HttpReq)?;
-    SigningConfig::new(RsaSha256, private_key, key_id)
+    SigningConfig::new(RsaSha256, &private_key, key_id)
         .sign(&mut req)?;
     let req: reqwest::Request = req.try_into()?;
     let res = client.execute(req)

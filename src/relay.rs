@@ -67,6 +67,8 @@ pub fn spawn(
     private_key: PrivateKey,
     mut stream_rx: Receiver<String>
 ) {
+    let private_key = Arc::new(private_key);
+
     tokio::spawn(async move {
         while let Some(data) = stream_rx.recv().await {
             // dbg!(&data);
@@ -84,7 +86,6 @@ pub fn spawn(
                 // skip reposts
                 None => continue,
             };
-            // TODO: queue by target?
             let mut seen_actors = HashSet::new();
             let mut seen_inboxes = HashSet::new();
             for actor in post.relay_targets(hostname.clone()) {
@@ -109,16 +110,20 @@ pub fn spawn(
                     if seen_inboxes.contains(&inbox) {
                         continue;
                     }
-
+                    seen_inboxes.insert(inbox.clone());
+                    let client_ = client.clone();
+                    let body_ = body.clone();
+                    let key_id = actor.key_id();
+                    let private_key_ = private_key.clone();
                     tracing::debug!("relay {} to {}", actor_id, inbox);
-                    if let Err(e) = send::send_raw(
-                        &client, &inbox,
-                        &actor.key_id(), &private_key, body.clone()
-                    ).await {
-                        tracing::error!("relay::send {:?}", e);
-                    }
-
-                    seen_inboxes.insert(inbox);
+                    tokio::spawn(async move {
+                        if let Err(e) = send::send_raw(
+                            &client_, &inbox,
+                            &key_id, &private_key_, body_
+                        ).await {
+                            tracing::error!("relay::send {:?}", e);
+                        }
+                    });
                 }
 
                 seen_actors.insert(actor);
