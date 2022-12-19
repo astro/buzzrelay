@@ -13,7 +13,7 @@ pub enum StreamError {
     InvalidContentType,
 }
 
-async fn run(host: &str) -> Result<impl Stream<Item = serde_json::Value>, StreamError> {
+async fn run(host: &str) -> Result<impl Stream<Item = String>, StreamError> {
     let url = format!("https://{}/api/v1/streaming/public", host);
     let client = reqwest::Client::new();
     let res = client.get(url)
@@ -40,19 +40,11 @@ async fn run(host: &str) -> Result<impl Stream<Item = serde_json::Value>, Stream
                 None
             }
         })
-        .filter_map(|event| async move {
-            match serde_json::from_str(&event.data) {
-                Ok(post) => Some(post),
-                Err(e) => {
-                    tracing::error!("Decode stream: {}", e);
-                    None
-                }
-            }
-        });
+        .map(|event| event.data);
     Ok(src)
 }
 
-pub fn spawn<H: Into<String>>(host: H) -> Receiver<serde_json::Value> {
+pub fn spawn<H: Into<String>>(host: H) -> Receiver<String> {
     let host = host.into();
     let (tx, rx) = channel(1024);
     tokio::spawn(async move {

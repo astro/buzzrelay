@@ -1,3 +1,5 @@
+use std::{sync::Arc, ops::Deref};
+
 use futures::StreamExt;
 use http::StatusCode;
 use http_digest_headers::{DigestHeader, DigestMethod};
@@ -28,10 +30,22 @@ pub async fn send<T: Serialize>(
     uri: &str,
     key_id: &str,
     private_key: &PrivateKey,
-    body: T,
+    body: &T,
 ) -> Result<(), SendError> {
-    let body = serde_json::to_vec(&body)
-        .map_err(SendError::Json)?;
+    let body = Arc::new(
+        serde_json::to_vec(body)
+            .map_err(SendError::Json)?
+    );
+    send_raw(client, uri, key_id, private_key, body).await
+}
+
+pub async fn send_raw(
+    client: &reqwest::Client,
+    uri: &str,
+    key_id: &str,
+    private_key: &PrivateKey,
+    body: Arc<Vec<u8>>,
+) -> Result<(), SendError> {
     let mut digest_header = DigestHeader::new()
         .with_method(DigestMethod::SHA256, &body)
         .map(|h| format!("{}", h))
@@ -55,7 +69,7 @@ pub async fn send<T: Serialize>(
         .header("date", chrono::Utc::now().to_rfc2822()
             .replace("+0000", "GMT"))
         .header("digest", digest_header)
-        .body(body)
+        .body(body.as_ref().clone())
         .map_err(SendError::HttpReq)?;
     SigningConfig::new(RsaSha256, private_key, key_id)
         .sign(&mut req)?;

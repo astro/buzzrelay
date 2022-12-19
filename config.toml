@@ -1,0 +1,5 @@
+hostname: relay.fedi.buzz
+listen_port: 3000
+priv_key_file: private-key.pem
+pub_key_file: public-key.pem
+db: "host=localhost user=relay password=xyz dbname=buzzrelay"

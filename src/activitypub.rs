@@ -1,3 +1,4 @@
+use axum::{response::IntoResponse, Json};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -8,11 +9,10 @@ pub struct Actor {
     pub actor_type: String,
     pub id: String,
     pub inbox: String,
-    // pub outbox: String,
     #[serde(rename = "publicKey")]
     pub public_key: ActorPublicKey,
     #[serde(rename = "preferredUsername")]
-    pub preferredUsername: Option<String>,
+    pub preferred_username: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -34,4 +34,11 @@ pub struct Action<O> {
     pub actor: String,
     pub to: Option<String>,
     pub object: Option<O>,
+}
+
+impl IntoResponse for Actor {
+    fn into_response(self) -> axum::response::Response {
+        ([("content-type", "application/activity+json")],
+         Json(self)).into_response()
+    }
 }
