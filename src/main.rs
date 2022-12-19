@@ -141,6 +141,9 @@ async fn post_relay(
             format!("Bad action: {:?}", e)
         ).into_response(),
     };
+    let object_type = action.object
+        .and_then(|object| object.get("type").cloned())
+        .and_then(|object_type| object_type.as_str().map(|s| s.to_string()));
 
     if action.action_type == "Follow" {
         let priv_key = state.priv_key.clone();
@@ -162,11 +165,16 @@ async fn post_relay(
             ).await;
             match result {
                 Ok(()) => {
-                    state.database.add_follow(
+                    match state.database.add_follow(
                         &endpoint.actor.id,
                         &endpoint.actor.inbox,
                         &target.uri(),
-                    ).await.unwrap();
+                    ).await {
+                        Ok(()) => {}
+                        Err(e) =>
+                            // duplicate key constraint
+                            tracing::error!("add_follow: {}", e),
+                    }
                 }
                 Err(e) => {
                     tracing::error!("post accept: {}", e);
@@ -178,6 +186,23 @@ async fn post_relay(
          [("content-type", "application/activity+json")],
          "{}"
         ).into_response()
+    } else if action.action_type == "Undo" && object_type == Some("Follow".to_string()) {
+        match state.database.del_follow(
+            &endpoint.actor.id,
+            &target.uri(),
+        ).await {
+            Ok(()) =>
+                (StatusCode::ACCEPTED,
+                 [("content-type", "application/activity+json")],
+                 "{}"
+                ).into_response(),
+            Err(e) => {
+                tracing::error!("del_follow: {}", e);
+                (StatusCode::INTERNAL_SERVER_ERROR,
+                 format!("{}", e)
+                 ).into_response()
+            }
+        }
     } else {
         // TODO: Undo Follow
         (StatusCode::BAD_REQUEST, "Not a recognized request").into_response()
