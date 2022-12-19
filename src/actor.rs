@@ -35,7 +35,6 @@ impl Actor {
             actor_type: "Service".to_string(),
             id: self.uri(),
             inbox: self.uri(),
-            // outbox: "https://relay.fedi.buzz/outbox".to_string(),
             public_key: activitypub::ActorPublicKey {
                 id: self.key_id(),
                 owner: Some(self.uri()),
