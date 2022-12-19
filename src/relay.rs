@@ -10,14 +10,14 @@ use crate::{db::Database, send, actor};
 
 #[derive(Deserialize)]
 struct Post<'a> {
-    // pub url: &'a str,
+    pub url: Option<&'a str>,
     pub uri: &'a str,
     pub tags: Option<Vec<Tag<'a>>>,
 }
 
 impl Post<'_> {
     pub fn host(&self) -> Option<String> {
-        reqwest::Url::parse(&self.uri)
+        reqwest::Url::parse(self.url?)
             .ok()
             .and_then(|url| url.domain()
                       .map(|s| s.to_lowercase())
@@ -78,10 +78,17 @@ pub fn spawn(
                     continue;
                 }
             };
+            // tracing::trace!("post uri={:?} url={:?}", post.uri, post.url);
+            let post_url = match post.url {
+                Some(url) => url,
+                // skip reposts
+                None => continue,
+            };
             // TODO: queue by target?
-            let mut seen = HashSet::new();
+            let mut seen_actors = HashSet::new();
+            let mut seen_inboxes = HashSet::new();
             for actor in post.relay_targets(hostname.clone()) {
-                if seen.contains(&actor) {
+                if seen_actors.contains(&actor) {
                     continue;
                 }
 
@@ -92,22 +99,29 @@ pub fn spawn(
                     "actor": &actor_id,
                     "to": ["https://www.w3.org/ns/activitystreams#Public"],
                     "object": &post.uri,
-                    "id": &post.uri,
+                    "id": &post_url,
                 });
                 let body = Arc::new(
                     serde_json::to_vec(&body)
                         .unwrap()
                 );
                 for inbox in database.get_following_inboxes(&actor_id).await.unwrap() {
+                    if seen_inboxes.contains(&inbox) {
+                        continue;
+                    }
+
+                    tracing::debug!("relay {} to {}", actor_id, inbox);
                     if let Err(e) = send::send_raw(
                         &client, &inbox,
                         &actor.key_id(), &private_key, body.clone()
                     ).await {
                         tracing::error!("relay::send {:?}", e);
                     }
+
+                    seen_inboxes.insert(inbox);
                 }
 
-                seen.insert(actor);
+                seen_actors.insert(actor);
             }
         }
     });

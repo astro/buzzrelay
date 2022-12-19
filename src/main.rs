@@ -204,7 +204,6 @@ async fn post_relay(
             }
         }
     } else {
-        // TODO: Undo Follow
         (StatusCode::BAD_REQUEST, "Not a recognized request").into_response()
     }
 }
