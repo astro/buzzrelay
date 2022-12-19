@@ -20,7 +20,7 @@ impl Post<'_> {
         reqwest::Url::parse(self.url?)
             .ok()
             .and_then(|url| url.domain()
-                      .map(|s| s.to_lowercase())
+                      .map(str::to_lowercase)
             )
     }
 
@@ -38,11 +38,11 @@ impl Post<'_> {
     fn relay_target_kinds(&self) -> impl Iterator<Item = actor::ActorKind> {
         self.host()
             .into_iter()
-            .map(|host| actor::ActorKind::InstanceRelay(host.clone()))
+            .map(actor::ActorKind::InstanceRelay)
             .chain(
                 self.tags()
                     .into_iter()
-                    .map(|tag| actor::ActorKind::TagRelay(tag))
+                    .map(actor::ActorKind::TagRelay)
             )
     }
 

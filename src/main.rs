@@ -1,14 +1,12 @@
 use axum::{
-    async_trait,
-    extract::{FromRequest, FromRef, Path, Query},
-    http::{header::CONTENT_TYPE, Request, StatusCode},
+    extract::{FromRef, Path, Query},
+    http::{StatusCode},
     response::{IntoResponse, Response},
-    routing::{get, post},
-    Form, Json, RequestExt, Router,
+    routing::{get}, Json, Router,
 };
-use serde::{Deserialize, Serialize};
+
 use serde_json::json;
-use sigh::{PrivateKey, PublicKey, alg::{RsaSha256, Algorithm}, Key};
+use sigh::{PrivateKey, PublicKey};
 use std::{net::SocketAddr, sync::Arc, time::Duration, collections::HashMap};
 use std::{panic, process};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -143,7 +141,7 @@ async fn post_relay(
     };
     let object_type = action.object
         .and_then(|object| object.get("type").cloned())
-        .and_then(|object_type| object_type.as_str().map(|s| s.to_string()));
+        .and_then(|object_type| object_type.as_str().map(std::string::ToString::to_string));
 
     if action.action_type == "Follow" {
         let priv_key = state.priv_key.clone();
@@ -222,9 +220,7 @@ async fn main() {
         .init();
 
     let config = config::Config::load(
-        &std::env::args()
-            .skip(1)
-            .next()
+        &std::env::args().nth(1)
             .expect("Call with config.yaml")
     );
     let database = db::Database::connect(&config.db).await;

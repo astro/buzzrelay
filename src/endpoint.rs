@@ -4,16 +4,13 @@ use axum::{
     async_trait,
     body::{Bytes, HttpBody},
     extract::{FromRef, FromRequest},
-    http::{header::CONTENT_TYPE, Request, StatusCode},
-    response::{IntoResponse, Response},
-    routing::post,
-    Form, RequestExt, Router, BoxError,
+    http::{header::CONTENT_TYPE, Request, StatusCode}, BoxError,
 };
 
-use http_digest_headers::{DigestHeader, DigestMethod, Error as DigestError};
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use http_digest_headers::{DigestHeader};
+
 use sigh::{Signature, PublicKey, Key};
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
 
 use crate::fetch::fetch;
 use crate::activitypub::Actor;
@@ -67,7 +64,7 @@ where
         let signature_headers = signature.headers()
             .ok_or((StatusCode::BAD_REQUEST, "No signed headers".to_string()))?;
         for header in SIGNATURE_HEADERS_REQUIRED {
-            if signature_headers.iter().find(|h| *h == header) == None {
+            if !signature_headers.iter().any(|h| h == header) {
                 return Err((StatusCode::BAD_REQUEST, format!("Header {:?} not signed", header)));
             }
         }
@@ -83,8 +80,8 @@ where
             digest_header.replace_range(..4, "sha-");
         }
         // mastodon uses base64::alphabet::STANDARD, not base64::alphabet::URL_SAFE
-        digest_header = digest_header.replace("+", "-")
-            .replace("/", "_");
+        digest_header = digest_header.replace('+', "-")
+            .replace('/', "_");
         let digest: DigestHeader = digest_header.parse()
             .map_err(|e| (StatusCode::BAD_REQUEST, format!("Cannot parse Digest: header: {}", e)))?;
         // read body
@@ -96,7 +93,7 @@ where
         }
         // parse body
         let payload: serde_json::Value = serde_json::from_slice(&bytes)
-            .map_err(|_| (StatusCode::BAD_REQUEST, format!("Error parsing JSON")))?;
+            .map_err(|_| (StatusCode::BAD_REQUEST, "Error parsing JSON".to_string()))?;
         let actor_uri = if let Some(serde_json::Value::String(actor_uri)) = payload.get("actor") {
             actor_uri
         } else {
@@ -104,20 +101,20 @@ where
         };
 
         // validate actor
-        let client = Arc::from_ref(&state);
+        let client = Arc::from_ref(state);
         let actor: Actor =
             serde_json::from_value(
-                fetch(&client, &actor_uri).await
+                fetch(&client, actor_uri).await
                     .map_err(|e| (StatusCode::BAD_GATEWAY, format!("{}", e)))?
             ).map_err(|e| (StatusCode::BAD_GATEWAY, format!("Invalid actor: {}", e)))?;
         let public_key = PublicKey::from_pem(actor.public_key.pem.as_bytes())
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("{:?}", e)))?;
-        if signature.verify(&public_key)
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("{:?}", e)))? != true
+        if !(signature.verify(&public_key)
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("{:?}", e)))?)
         {
             return Err((StatusCode::BAD_REQUEST, "Signature verification failed".to_string()));
         }
         
-        return Ok(Endpoint { actor, payload });
+        return Ok(Endpoint { payload, actor });
     }
 }

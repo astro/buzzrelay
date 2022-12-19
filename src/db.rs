@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use tokio_postgres::{Client, Error, NoTls, Statement};
 
-use crate::actor;
+
 
 const CREATE_SCHEMA_COMMANDS: &[&str] = &[
     "CREATE TABLE IF NOT EXISTS follows (id TEXT, inbox TEXT, actor TEXT, UNIQUE (inbox, actor))",

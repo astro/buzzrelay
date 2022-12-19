@@ -25,12 +25,7 @@
           cargoTestCommands = x:
             x ++ [
               ''cargo clippy --all --all-features --tests -- \
-                -D clippy::pedantic \
                 -D warnings \
-                -A clippy::module-name-repetitions \
-                -A clippy::too-many-lines \
-                -A clippy::cast-possible-wrap \
-                -A clippy::cast-possible-truncation \
                 -A clippy::nonminimal_bool''
             ];
           meta.description = "Send Prometheus alerts to XMPP Multi-User Chatrooms";

@@ -1,9 +1,8 @@
-use std::{sync::Arc, ops::Deref};
+use std::{sync::Arc};
 
-use futures::StreamExt;
 use http::StatusCode;
 use http_digest_headers::{DigestHeader, DigestMethod};
-use reqwest::Body;
+
 use serde::Serialize;
 use sigh::{PrivateKey, SigningConfig, alg::RsaSha256};
 
@@ -56,7 +55,7 @@ pub async fn send_raw(
     // mastodon uses base64::alphabet::STANDARD, not base64::alphabet::URL_SAFE
     digest_header.replace_range(
         7..,
-        &digest_header[7..].replace("-", "+").replace("_", "/")
+        &digest_header[7..].replace('-', "+").replace('_', "/")
     );
 
     let url = reqwest::Url::parse(uri)
@@ -71,7 +70,7 @@ pub async fn send_raw(
         .header("digest", digest_header)
         .body(body.as_ref().clone())
         .map_err(SendError::HttpReq)?;
-    SigningConfig::new(RsaSha256, &private_key, key_id)
+    SigningConfig::new(RsaSha256, private_key, key_id)
         .sign(&mut req)?;
     let req: reqwest::Request = req.try_into()?;
     let res = client.execute(req)

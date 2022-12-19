@@ -1,5 +1,5 @@
 use axum::{response::IntoResponse, Json};
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Actor {
@@ -23,7 +23,7 @@ pub struct ActorPublicKey {
     pub pem: String,
 }
 
-/// ActivityPub "activity"
+/// `ActivityPub` "activity"
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Action<O> {
     #[serde(rename = "@context")]
