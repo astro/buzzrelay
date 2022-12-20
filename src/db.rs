@@ -4,7 +4,7 @@ use tokio_postgres::{Client, Error, NoTls, Statement};
 
 
 const CREATE_SCHEMA_COMMANDS: &[&str] = &[
-    "CREATE TABLE IF NOT EXISTS follows (id TEXT, inbox TEXT, actor TEXT, UNIQUE (inbox, actor))",
+    "CREATE TABLE IF NOT EXISTS follows (id TEXT NOT NULL, inbox TEXT NOT NULL, actor TEXT NOT NULL, UNIQUE (inbox, actor))",
     "CREATE INDEX IF NOT EXISTS follows_actor ON follows (actor) INCLUDE (inbox)",
 ];
 
