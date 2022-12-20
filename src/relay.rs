@@ -1,5 +1,5 @@
 use std::{sync::Arc, collections::HashSet};
-
+use metrics::increment_counter;
 use serde::Deserialize;
 use serde_json::json;
 use sigh::PrivateKey;
@@ -84,7 +84,10 @@ pub fn spawn(
             let post_url = match post.url {
                 Some(url) => url,
                 // skip reposts
-                None => continue,
+                None => {
+                    increment_counter!("post", "action" => "skip");
+                    continue;
+                }
             };
             let mut seen_actors = HashSet::new();
             let mut seen_inboxes = HashSet::new();
@@ -117,6 +120,7 @@ pub fn spawn(
                     let private_key_ = private_key.clone();
                     tracing::debug!("relay {} to {}", actor_id, inbox);
                     tokio::spawn(async move {
+                        increment_counter!("relay", "target" => inbox.clone());
                         if let Err(e) = send::send_raw(
                             &client_, &inbox,
                             &key_id, &private_key_, body_
@@ -134,6 +138,11 @@ pub fn spawn(
                 }
 
                 seen_actors.insert(actor);
+            }
+            if seen_inboxes.is_empty() {
+                increment_counter!("post", "action" => "no_relay");
+            } else {
+                increment_counter!("post", "action" => "relay");
             }
         }
     });

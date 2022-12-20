@@ -4,7 +4,9 @@ use axum::{
     response::{IntoResponse, Response},
     routing::{get}, Json, Router,
 };
-
+use metrics::increment_counter;
+use metrics_util::MetricKindMask;
+use metrics_exporter_prometheus::{PrometheusBuilder};
 use serde_json::json;
 use sigh::{PrivateKey, PublicKey};
 use std::{net::SocketAddr, sync::Arc, time::Duration, collections::HashMap};
@@ -39,13 +41,20 @@ impl FromRef<State> for Arc<reqwest::Client> {
     }
 }
 
+fn track_request(method: &'static str, controller: &'static str, result: &'static str) {
+    increment_counter!("request", "controller" => controller, "method" => method, "result" => result);
+}
+
 async fn webfinger(
     axum::extract::State(state): axum::extract::State<State>,
     Query(params): Query<HashMap<String, String>>,
 ) -> Response {
     let resource = match params.get("resource") {
         Some(resource) => resource,
-        None => return StatusCode::NOT_FOUND.into_response(),
+        None => {
+            track_request("GET", "webfinger", "invalid");
+            return StatusCode::NOT_FOUND.into_response();
+        },
     };
     let (target_kind, target_host) =
         if resource.starts_with("acct:tag-") {
@@ -59,8 +68,10 @@ async fn webfinger(
             (actor::ActorKind::InstanceRelay(resource[off..at.unwrap_or(resource.len())].to_string()),
              at.map_or_else(|| state.hostname.clone(), |at| Arc::new(resource[at + 1..].to_string())))
         } else {
+            track_request("GET", "webfinger", "not_found");
             return StatusCode::NOT_FOUND.into_response();
         };
+    track_request("GET", "webfinger", "found");
     let target = actor::Actor {
         host: target_host,
         kind: target_kind,
@@ -82,6 +93,7 @@ async fn get_tag_actor(
     axum::extract::State(state): axum::extract::State<State>,
     Path(tag): Path<String>
 ) -> Response {
+    track_request("GET", "actor", "tag");
     let target = actor::Actor {
         host: state.hostname.clone(),
         kind: actor::ActorKind::TagRelay(tag.to_lowercase()),
@@ -94,6 +106,7 @@ async fn get_instance_actor(
     axum::extract::State(state): axum::extract::State<State>,
     Path(instance): Path<String>
 ) -> Response {
+    track_request("GET", "actor", "instance");
     let target = actor::Actor {
         host: state.hostname.clone(),
         kind: actor::ActorKind::InstanceRelay(instance.to_lowercase()),
@@ -134,10 +147,13 @@ async fn post_relay(
     dbg!(&endpoint);
     let action = match serde_json::from_value::<activitypub::Action<serde_json::Value>>(endpoint.payload.clone()) {
         Ok(action) => action,
-        Err(e) => return (
-            StatusCode::BAD_REQUEST,
-            format!("Bad action: {:?}", e)
-        ).into_response(),
+        Err(e) => {
+            track_request("POST", "relay", "bad_action");
+            return (
+                StatusCode::BAD_REQUEST,
+                format!("Bad action: {:?}", e)
+            ).into_response();
+        }
     };
     let object_type = action.object
         .and_then(|object| object.get("type").cloned())
@@ -168,14 +184,19 @@ async fn post_relay(
                         &endpoint.actor.inbox,
                         &target.uri(),
                     ).await {
-                        Ok(()) => {}
-                        Err(e) =>
+                        Ok(()) => {
+                            track_request("POST", "relay", "follow");
+                        }
+                        Err(e) => {
                             // duplicate key constraint
-                            tracing::error!("add_follow: {}", e),
+                            tracing::error!("add_follow: {}", e);
+                            track_request("POST", "relay", "follow_error");
+                        }
                     }
                 }
                 Err(e) => {
                     tracing::error!("post accept: {}", e);
+                    track_request("POST", "relay", "follow_accept_error");
                 }
             }
         });
@@ -189,19 +210,23 @@ async fn post_relay(
             &endpoint.actor.id,
             &target.uri(),
         ).await {
-            Ok(()) =>
+            Ok(()) => {
+                track_request("POST", "relay", "unfollow");
                 (StatusCode::ACCEPTED,
                  [("content-type", "application/activity+json")],
                  "{}"
-                ).into_response(),
+                ).into_response()
+            }
             Err(e) => {
                 tracing::error!("del_follow: {}", e);
+                track_request("POST", "relay", "unfollow_error");
                 (StatusCode::INTERNAL_SERVER_ERROR,
                  format!("{}", e)
                  ).into_response()
             }
         }
     } else {
+        track_request("POST", "relay", "unrecognized");
         (StatusCode::BAD_REQUEST, "Not a recognized request").into_response()
     }
 }
@@ -223,6 +248,13 @@ async fn main() {
         &std::env::args().nth(1)
             .expect("Call with config.yaml")
     );
+
+    let recorder = PrometheusBuilder::new()
+        .add_global_label("application", env!("CARGO_PKG_NAME"))
+        .idle_timeout(MetricKindMask::ALL, Some(Duration::from_secs(600)))
+        .install_recorder()
+        .unwrap();
+
     let database = db::Database::connect(&config.db).await;
 
     let stream_rx = stream::spawn(config.upstream.clone());
@@ -246,6 +278,9 @@ async fn main() {
         .route("/tag/:tag", get(get_tag_actor).post(post_tag_relay))
         .route("/instance/:instance", get(get_instance_actor).post(post_instance_relay))
         .route("/.well-known/webfinger", get(webfinger))
+        .route("/metrics", get(|| async move {
+            recorder.render().into_response()
+        }))
         .with_state(State {
             database,
             client,

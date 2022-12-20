@@ -1,8 +1,10 @@
-use std::{sync::Arc};
-
+use std::{
+    sync::Arc,
+    time::Instant,
+};
 use http::StatusCode;
 use http_digest_headers::{DigestHeader, DigestMethod};
-
+use metrics::histogram;
 use serde::Serialize;
 use sigh::{PrivateKey, SigningConfig, alg::RsaSha256};
 
@@ -60,24 +62,31 @@ pub async fn send_raw(
 
     let url = reqwest::Url::parse(uri)
         .map_err(|_| SendError::InvalidUri)?;
+    let host = format!("{}", url.host().ok_or(SendError::InvalidUri)?);
     let mut req = http::Request::builder()
         .method("POST")
         .uri(uri)
-        .header("host", format!("{}", url.host().ok_or(SendError::InvalidUri)?))
+        .header("host", &host)
         .header("content-type", "application/activity+json")
         .header("date", chrono::Utc::now().to_rfc2822()
             .replace("+0000", "GMT"))
         .header("digest", digest_header)
         .body(body.as_ref().clone())
         .map_err(SendError::HttpReq)?;
+    let t1 = Instant::now();
     SigningConfig::new(RsaSha256, private_key, key_id)
         .sign(&mut req)?;
+    let t2 = Instant::now();
     let req: reqwest::Request = req.try_into()?;
     let res = client.execute(req)
         .await?;
+    let t3 = Instant::now();
+    histogram!("sign_req", t2 - t1);
     if res.status() >= StatusCode::OK && res.status() < StatusCode::MULTIPLE_CHOICES {
+        histogram!("req", t3 - t2, "res" => "ok", "host" => host);
         Ok(())
     } else {
+        histogram!("req", t3 - t2, "res" => "err", "host" => host);
         let response = res.text().await?;
         Err(SendError::Response(response))
     }
