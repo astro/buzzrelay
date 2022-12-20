@@ -118,7 +118,7 @@ pub fn spawn(
                     let body_ = body.clone();
                     let key_id = actor.key_id();
                     let private_key_ = private_key.clone();
-                    tracing::debug!("relay {} to {}", actor_id, inbox);
+                    tracing::debug!("relay {} from {} to {}", &post_url, actor_id, inbox);
                     tokio::spawn(async move {
                         increment_counter!("relay", "target" => inbox.clone());
                         if let Err(e) = send::send_raw(
