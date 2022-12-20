@@ -84,7 +84,7 @@ pub fn spawn(
                 Some(url) => url,
                 // skip reposts
                 None => {
-                    increment_counter!("post", "action" => "skip");
+                    increment_counter!("relay_posts_total", "action" => "skip");
                     continue;
                 }
             };
@@ -119,7 +119,6 @@ pub fn spawn(
                     let private_key_ = private_key.clone();
                     tracing::debug!("relay {} from {} to {}", &post_url, actor_id, inbox);
                     tokio::spawn(async move {
-                        increment_counter!("relay", "target" => inbox.clone());
                         if let Err(e) = send::send_raw(
                             &client_, &inbox,
                             &key_id, &private_key_, body_
@@ -139,12 +138,12 @@ pub fn spawn(
                 seen_actors.insert(actor);
             }
             if seen_inboxes.is_empty() {
-                increment_counter!("post", "action" => "no_relay");
+                increment_counter!("relay_posts_total", "action" => "no_relay");
             } else {
-                increment_counter!("post", "action" => "relay");
+                increment_counter!("relay_posts_total", "action" => "relay");
             }
             let t2 = Instant::now();
-            histogram!("relay_post", t2 - t1);
+            histogram!("relay_post_duration", t2 - t1);
         }
     });
 }

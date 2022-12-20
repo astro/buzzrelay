@@ -62,7 +62,7 @@ impl Database {
         self.inner.client.execute(&self.inner.add_follow, &[&id, &inbox, &actor])
             .await?;
         let t2 = Instant::now();
-        histogram!("sql", t2 - t1, "query" => "add_follow");
+        histogram!("postgres_query_duration", t2 - t1, "query" => "add_follow");
         Ok(())
     }
 
@@ -71,7 +71,7 @@ impl Database {
         self.inner.client.execute(&self.inner.del_follow, &[&id, &actor])
             .await?;
         let t2 = Instant::now();
-        histogram!("sql", t2 - t1, "query" => "del_follow");
+        histogram!("postgres_query_duration", t2 - t1, "query" => "del_follow");
         Ok(())
     }
 
@@ -80,7 +80,7 @@ impl Database {
         let rows = self.inner.client.query(&self.inner.get_following_inboxes, &[&actor])
             .await?;
         let t2 = Instant::now();
-        histogram!("sql", t2 - t1, "query" => "get_following_inboxes");
+        histogram!("postgres_query_duration", t2 - t1, "query" => "get_following_inboxes");
         Ok(rows.into_iter()
            .map(|row| row.get(0))
         )

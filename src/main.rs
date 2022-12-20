@@ -42,7 +42,7 @@ impl FromRef<State> for Arc<reqwest::Client> {
 }
 
 fn track_request(method: &'static str, controller: &'static str, result: &'static str) {
-    increment_counter!("request", "controller" => controller, "method" => method, "result" => result);
+    increment_counter!("api_http_requests_total", "controller" => controller, "method" => method, "result" => result);
 }
 
 async fn webfinger(
