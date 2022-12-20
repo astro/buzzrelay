@@ -69,8 +69,8 @@
             Group = cfg.group;
             ProtectSystem = "full";
             Restart = "always";
-            RestartSec = "10s";
-            WatchdogSec = "600s";
+            RestartSec = "1s";
+            WatchdogSec = "1800s";
           };
         };
       };
