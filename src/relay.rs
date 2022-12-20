@@ -1,5 +1,5 @@
-use std::{sync::Arc, collections::HashSet};
-use metrics::increment_counter;
+use std::{sync::Arc, collections::HashSet, time::Instant};
+use metrics::{increment_counter, histogram};
 use serde::Deserialize;
 use serde_json::json;
 use sigh::PrivateKey;
@@ -71,7 +71,7 @@ pub fn spawn(
 
     tokio::spawn(async move {
         while let Some(data) = stream_rx.recv().await {
-            // dbg!(&data);
+            let t1 = Instant::now();
             let post: Post = match serde_json::from_str(&data) {
                 Ok(post) => post,
                 Err(e) => {
@@ -80,7 +80,6 @@ pub fn spawn(
                     continue;
                 }
             };
-            // tracing::trace!("post uri={:?} url={:?}", post.uri, post.url);
             let post_url = match post.url {
                 Some(url) => url,
                 // skip reposts
@@ -144,6 +143,8 @@ pub fn spawn(
             } else {
                 increment_counter!("post", "action" => "relay");
             }
+            let t2 = Instant::now();
+            histogram!("relay_post", t2 - t1);
         }
     });
 }
