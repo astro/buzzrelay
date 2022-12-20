@@ -1,6 +1,6 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Instant};
+use metrics::histogram;
 use tokio_postgres::{Client, Error, NoTls, Statement};
-
 
 
 const CREATE_SCHEMA_COMMANDS: &[&str] = &[
@@ -58,20 +58,29 @@ impl Database {
     }
 
     pub async fn add_follow(&self, id: &str, inbox: &str, actor: &str) -> Result<(), Error> {
+        let t1 = Instant::now();
         self.inner.client.execute(&self.inner.add_follow, &[&id, &inbox, &actor])
             .await?;
+        let t2 = Instant::now();
+        histogram!("sql", t2 - t1, "query" => "add_follow");
         Ok(())
     }
 
     pub async fn del_follow(&self, id: &str, actor: &str) -> Result<(), Error> {
+        let t1 = Instant::now();
         self.inner.client.execute(&self.inner.del_follow, &[&id, &actor])
             .await?;
+        let t2 = Instant::now();
+        histogram!("sql", t2 - t1, "query" => "del_follow");
         Ok(())
     }
 
     pub async fn get_following_inboxes(&self, actor: &str) -> Result<impl Iterator<Item = String>, Error> {
+        let t1 = Instant::now();
         let rows = self.inner.client.query(&self.inner.get_following_inboxes, &[&actor])
             .await?;
+        let t2 = Instant::now();
+        histogram!("sql", t2 - t1, "query" => "get_following_inboxes");
         Ok(rows.into_iter()
            .map(|row| row.get(0))
         )
