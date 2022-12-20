@@ -38,7 +38,7 @@
           listen_port = cfg.listenPort;
           priv_key_file = cfg.privKeyFile;
           pub_key_file = cfg.pubKeyFile;
-          db = "postgres://${cfg.user}@localhost/${cfg.database}";
+          db = "host=/var/run/postgresql user=${cfg.user} dbname=${cfg.database}";
         });
     in
       lib.mkIf cfg.enable {
