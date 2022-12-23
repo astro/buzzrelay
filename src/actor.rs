@@ -34,6 +34,17 @@ impl Actor {
             jsonld_context: serde_json::Value::String("https://www.w3.org/ns/activitystreams".to_string()),
             actor_type: "Service".to_string(),
             id: self.uri(),
+            name: Some(match &self.kind {
+                ActorKind::TagRelay(tag) =>
+                    format!("#{}", tag),
+                ActorKind::InstanceRelay(instance) =>
+                    instance.to_string(),
+            }),
+            icon: Some(activitypub::Media {
+                media_type: "Image".to_string(),
+                content_type: "image/jpeg".to_string(),
+                url: "https://fedi.buzz/assets/favicon48.png".to_string(),
+            }),
             inbox: self.uri(),
             public_key: activitypub::ActorPublicKey {
                 id: self.key_id(),

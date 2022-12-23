@@ -8,6 +8,8 @@ pub struct Actor {
     #[serde(rename = "type")]
     pub actor_type: String,
     pub id: String,
+    pub name: Option<String>,
+    pub icon: Option<Media>,
     pub inbox: String,
     #[serde(rename = "publicKey")]
     pub public_key: ActorPublicKey,
@@ -41,4 +43,13 @@ impl IntoResponse for Actor {
         ([("content-type", "application/activity+json")],
          Json(self)).into_response()
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Media {
+    #[serde(rename = "type")]
+    pub media_type: String,
+    #[serde(rename = "mediaType")]
+    pub content_type: String,
+    pub url: String,
 }
