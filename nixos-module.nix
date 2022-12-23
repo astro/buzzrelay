@@ -40,6 +40,7 @@
           pub_key_file = cfg.pubKeyFile;
           db = "host=/var/run/postgresql user=${cfg.user} dbname=${cfg.database}";
         });
+      inherit (self.packages.${pkgs.system}) buzzrelay;
     in
       lib.mkIf cfg.enable {
         users.users.${cfg.user} = {
@@ -64,7 +65,8 @@
           after = [ "network-online.target" ];
           serviceConfig = {
             Type = "notify";
-            ExecStart = "${self.packages.${pkgs.system}.buzzrelay}/bin/buzzrelay ${lib.escapeShellArg configFile}";
+            WorkingDirectory = "${buzzrelay}/share/buzzrelay";
+            ExecStart = "${buzzrelay}/bin/buzzrelay ${lib.escapeShellArg configFile}";
             User = cfg.user;
             Group = cfg.group;
             ProtectSystem = "full";

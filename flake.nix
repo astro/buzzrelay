@@ -20,6 +20,10 @@
           root = ./.;
           nativeBuildInputs = with pkgs; [ pkg-config ];
           buildInputs = with pkgs; [ openssl systemd ];
+          postInstall = ''
+            mkdir -p $out/share/buzzrelay
+            cp -r static $out/share/buzzrelay/
+          '';
           checkInputs = [ pkgs.rustPackages.clippy ];
           doCheck = true;
           cargoTestCommands = x:
