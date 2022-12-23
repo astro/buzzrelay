@@ -1,12 +1,13 @@
 use axum::{
     extract::{FromRef, Path, Query},
-    http::{StatusCode},
+    http::StatusCode,
     response::{IntoResponse, Response},
-    routing::{get}, Json, Router,
+    routing::get, Json, Router,
 };
+use axum_extra::routing::SpaRouter;
 use metrics::increment_counter;
 use metrics_util::MetricKindMask;
-use metrics_exporter_prometheus::{PrometheusBuilder};
+use metrics_exporter_prometheus::PrometheusBuilder;
 use serde_json::json;
 use sigh::{PrivateKey, PublicKey};
 use std::{net::SocketAddr, sync::Arc, time::Duration, collections::HashMap};
@@ -287,7 +288,8 @@ async fn main() {
             hostname,
             priv_key: config.priv_key(),
             pub_key: config.pub_key(),
-        });
+        })
+        .merge(SpaRouter::new("/", "static"));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], config.listen_port));
     let server = axum::Server::bind(&addr)

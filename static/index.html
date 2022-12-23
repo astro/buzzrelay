@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+  <head>
+    <title>#FediBuzz Relay</title>
+    <meta charset="utf-8"/>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+    <meta name="robots" content="index,follow"/>
+    <meta name="description" content="The buzzing ActivityPub relay service"/>
+    <meta name="keywords" content="activitypub relay fedibuzz"/>
+    <meta name="language" content="en"/>
+    <meta name="author" content="Astro"/>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <header>
+      <h1>#FediBuzz Relay</h1>
+      <p>The buzzing ActivityPub relay service</p>
+    </header>
+
+    <section>
+      <p>
+        Mastodon and many other ActivityPub-compatible services live
+        and breathe decentralization. Mastoadmins can still bring the
+        global buzz of toots into the <b>Federated Timeline</b> of their
+        small server by following <b>ActivityPub relays</b>.
+      </p>
+      <p>
+        With this service <a href="https://fedi.buzz/">#FediBuzz</a>
+        provides relay endpoints for you to customize. In Mastodon's
+        <b>preferences</b> go to:
+      </p>
+      <ol>
+        <li>Administration</li>
+        <li>Relay</li>
+        <li>Click the button to setup a new relay</li>
+        <li>Generate a relay address below</li>
+        <li>Copy &amp; paste into Mastodon's preferences</li>
+      </ol>
+    </section>
+
+    <section class="boxes">
+      <noscript>
+        <h2>
+          Please enable JavaScript!
+        </h2>
+      </noscript>
+      <article>
+        <h2>Follow posts by #tag</h2>
+        <div>
+          <input id="tag" len="20" placeholder="tag"/>
+        </div>
+        <pre id="tag-url"></pre>
+      </article>
+      <article>
+        <h2>Follow posts by instance</h2>
+        <div>
+          <input id="instance" len="20" placeholder="example.xyz"/>
+        </div>
+        <pre id="instance-url"></pre>
+      </article>
+    </section>
+
+    <footer>
+      <p>
+        run by <a rel="me" href="https://c3d2.social/@astro">@astro&#173;@c3d2.social</a>
+      </p>
+    </footer>
+
+    <script type="text/javascript" src="urlgen.js">
+    </script>
+  </body>
+</html>
