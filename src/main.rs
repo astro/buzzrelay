@@ -145,7 +145,6 @@ async fn post_relay(
     endpoint: endpoint::Endpoint,
     target: actor::Actor
 ) -> Response {
-    dbg!(&endpoint);
     let action = match serde_json::from_value::<activitypub::Action<serde_json::Value>>(endpoint.payload.clone()) {
         Ok(action) => action,
         Err(e) => {
