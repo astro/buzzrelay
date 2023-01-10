@@ -62,7 +62,7 @@
 
         systemd.services.buzzrelay = {
           wantedBy = [ "multi-user.target" ];
-          after = [ "network-online.target" ];
+          after = [ "postgresql.service" "network-online.target" ];
           serviceConfig = {
             Type = "notify";
             WorkingDirectory = "${buzzrelay}/share/buzzrelay";
