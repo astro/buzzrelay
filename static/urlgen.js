@@ -6,7 +6,7 @@
             setTimeout(function() {
                 var value = encodeURIComponent(inputEl.value.replace(/^#/, ""));
                 preEl.innerText = value ?
-                    "https://relay.fedi.buzz/" + id + "/" + value :
+                    "https://" + document.location.host + "/" + id + "/" + value :
                     "";
             }, 10);
         }
