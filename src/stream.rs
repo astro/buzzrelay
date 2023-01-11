@@ -13,8 +13,7 @@ pub enum StreamError {
     InvalidContentType,
 }
 
-async fn run(host: &str) -> Result<impl Stream<Item = String>, StreamError> {
-    let url = format!("https://{}/api/v1/streaming/public", host);
+async fn run(url: &str) -> Result<impl Stream<Item = String>, StreamError> {
     let client = reqwest::Client::new();
     let res = client.get(url)
         .timeout(Duration::MAX)
@@ -44,22 +43,25 @@ async fn run(host: &str) -> Result<impl Stream<Item = String>, StreamError> {
     Ok(src)
 }
 
-pub fn spawn<H: Into<String>>(host: H) -> Receiver<String> {
-    let host = host.into();
+pub fn spawn(hosts: impl Iterator<Item = impl Into<String>>) -> Receiver<String> {
     let (tx, rx) = channel(1024);
-    tokio::spawn(async move {
-        loop {
-            match run(&host).await {
-                Ok(stream) =>
-                    stream.for_each(|post| async {
-                        tx.send(post).await.unwrap();
-                    }).await,
-                Err(e) =>
-                    tracing::error!("stream: {:?}", e),
-            }
+    for host in hosts {
+        let host = host.into();
+        let tx = tx.clone();
+        tokio::spawn(async move {
+            loop {
+                match run(&host).await {
+                    Ok(stream) =>
+                        stream.for_each(|post| async {
+                            tx.send(post).await.unwrap();
+                        }).await,
+                    Err(e) =>
+                        tracing::error!("stream: {:?}", e),
+                }
 
-            sleep(Duration::from_secs(1)).await;
-        }
-    });
+                sleep(Duration::from_secs(1)).await;
+            }
+        });
+    }
     rx
 }

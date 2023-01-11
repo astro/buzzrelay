@@ -2,6 +2,12 @@
 { config, lib, pkgs, ... }: {
   options.services.buzzrelay = with lib; {
     enable = mkEnableOption "Enable Fedi.buzz relay";
+    streams = mkOption {
+      type = types.listOf str;
+      default = [
+        "https://fedi.buzz/api/v1/streaming/public"
+      ];
+    };
     listenPort = mkOption {
       type = types.int;
       default = 8000;
@@ -34,6 +40,7 @@
       cfg = config.services.buzzrelay;
       configFile = builtins.toFile "buzzrelay.toml" (
         lib.generators.toYAML {} {
+          streams = cfg.streams;
           hostname = cfg.hostName;
           listen_port = cfg.listenPort;
           priv_key_file = cfg.privKeyFile;

@@ -1,5 +1,14 @@
+# Sources
+streams:
+  # The fedi.buzz firehose stream
+  - "https://fedi.buzz/api/v1/streaming/public"
+  # You may list the streaming API of other instances here
+# external https hostname
 hostname: relay.fedi.buzz
+# where your reverse proxy will connect to
 listen_port: 3000
+# ActivityPub signing keypair
 priv_key_file: private-key.pem
 pub_key_file: public-key.pem
+# PostgreSQL
 db: "host=localhost user=relay password=xyz dbname=buzzrelay"

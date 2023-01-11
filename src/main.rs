@@ -248,6 +248,8 @@ async fn main() {
         &std::env::args().nth(1)
             .expect("Call with config.yaml")
     );
+    let priv_key = config.priv_key();
+    let pub_key = config.pub_key();
 
     let recorder = PrometheusBuilder::new()
         .add_global_label("application", env!("CARGO_PKG_NAME"))
@@ -257,7 +259,7 @@ async fn main() {
 
     let database = db::Database::connect(&config.db).await;
 
-    let stream_rx = stream::spawn(config.upstream.clone());
+    let stream_rx = stream::spawn(config.streams.into_iter());
     let client = Arc::new(
         reqwest::Client::builder()
             .timeout(Duration::from_secs(5))
@@ -272,7 +274,7 @@ async fn main() {
             .unwrap()
     );
     let hostname = Arc::new(config.hostname.clone());
-    relay::spawn(client.clone(), hostname.clone(), database.clone(), config.priv_key(), stream_rx);
+    relay::spawn(client.clone(), hostname.clone(), database.clone(), priv_key.clone(), stream_rx);
 
     let app = Router::new()
         .route("/tag/:tag", get(get_tag_actor).post(post_tag_relay))
@@ -285,8 +287,8 @@ async fn main() {
             database,
             client,
             hostname,
-            priv_key: config.priv_key(),
-            pub_key: config.pub_key(),
+            priv_key,
+            pub_key,
         })
         .merge(SpaRouter::new("/", "static"));
 

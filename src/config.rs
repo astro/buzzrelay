@@ -1,14 +1,9 @@
 use serde::Deserialize;
 use sigh::{PrivateKey, PublicKey, Key};
 
-fn default_upstream() -> String {
-    "fedi.buzz".to_string()
-}
-
 #[derive(Deserialize)]
 pub struct Config {
-    #[serde(default = "default_upstream")]
-    pub upstream: String,
+    pub streams: Vec<String>,
     pub db: String,
     pub hostname: String,
     pub listen_port: u16,
