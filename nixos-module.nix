@@ -3,7 +3,7 @@
   options.services.buzzrelay = with lib; {
     enable = mkEnableOption "Enable Fedi.buzz relay";
     streams = mkOption {
-      type = types.listOf str;
+      type = with types; listOf str;
       default = [
         "https://fedi.buzz/api/v1/streaming/public"
       ];
