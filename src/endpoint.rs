@@ -18,7 +18,7 @@ use crate::activitypub::Actor;
 const SIGNATURE_HEADERS_REQUIRED: &[&str] = &[
     "(request-target)",
     "host", "date",
-    "digest", "content-type",
+    "digest", "content-length",
 ];
 
 #[derive(Clone, Debug)]
