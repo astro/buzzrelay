@@ -167,7 +167,7 @@ async fn post_relay(
                 jsonld_context: serde_json::Value::String("https://www.w3.org/ns/activitystreams".to_string()),
                 action_type: "Accept".to_string(),
                 actor: target.uri(),
-                to: Some(endpoint.actor.id.clone()),
+                to: Some(json!(endpoint.actor.id.clone())),
                 id: action.id,
                 object: Some(endpoint.payload),
             };

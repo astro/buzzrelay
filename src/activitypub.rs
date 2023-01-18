@@ -34,7 +34,7 @@ pub struct Action<O> {
     pub action_type: String,
     pub id: String,
     pub actor: String,
-    pub to: Option<String>,
+    pub to: Option<serde_json::Value>,
     pub object: Option<O>,
 }
 
