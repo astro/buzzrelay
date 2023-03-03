@@ -87,7 +87,9 @@ pub async fn send_raw(
         Ok(())
     } else {
         histogram!("relay_http_response_duration", t3 - t2, "res" => "err", "host" => host);
+        tracing::error!("send_raw {} response HTTP {}", url, res.status());
         let response = res.text().await?;
+        tracing::error!("send_raw {} response body: {:?}", url, response);
         Err(SendError::Response(response))
     }
 }
