@@ -97,7 +97,7 @@ async fn get_tag_actor(
     track_request("GET", "actor", "tag");
     let target = actor::Actor {
         host: state.hostname.clone(),
-        kind: actor::ActorKind::TagRelay(tag.to_lowercase()),
+        kind: actor::ActorKind::from_tag(&tag),
     };
     target.as_activitypub(&state.pub_key)
         .into_response()
@@ -123,7 +123,7 @@ async fn post_tag_relay(
 ) -> Response {
     let target = actor::Actor {
         host: state.hostname.clone(),
-        kind: actor::ActorKind::TagRelay(tag.to_lowercase()),
+        kind: actor::ActorKind::from_tag(&tag),
     };
     post_relay(state, endpoint, target).await
 }

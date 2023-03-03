@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use deunicode::deunicode;
 use sigh::{PublicKey, Key};
 
 use crate::activitypub;
@@ -7,6 +8,15 @@ use crate::activitypub;
 pub enum ActorKind {
     TagRelay(String),
     InstanceRelay(String),
+}
+
+impl ActorKind {
+    pub fn from_tag(tag: &str) -> Self {
+        let tag = deunicode(tag)
+            .to_lowercase()
+            .replace(char::is_whitespace, "");
+        ActorKind::TagRelay(tag)
+    }
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]

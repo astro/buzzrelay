@@ -30,7 +30,7 @@ impl Post<'_> {
                 vec![],
             Some(tags) =>
                 tags.iter()
-                .map(|tag| tag.name.to_lowercase())
+                .map(|tag| tag.name.to_string())
                 .collect()
         }
     }
@@ -42,7 +42,7 @@ impl Post<'_> {
             .chain(
                 self.tags()
                     .into_iter()
-                    .map(actor::ActorKind::TagRelay)
+                    .map(|ref s| actor::ActorKind::from_tag(s))
             )
     }
 
