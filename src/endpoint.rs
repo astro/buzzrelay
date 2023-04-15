@@ -48,7 +48,8 @@ where
         // validate content-type
         let content_type = if let Some(content_type) = req.headers()
             .get(CONTENT_TYPE)
-            .and_then(|value| value.to_str().ok()) {
+            .and_then(|value| value.to_str().ok())
+            .and_then(|value| value.split(';').next()) {
                 content_type
             } else {
                 return Err((StatusCode::UNSUPPORTED_MEDIA_TYPE, "No content-type".to_string()));
