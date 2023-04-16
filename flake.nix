@@ -17,7 +17,7 @@
         in
         naersk-lib.buildPackage {
           pname = "buzzrelay";
-          version = with self; "${toString revCount}-${shortRev}";
+          version = "${toString (self.sourceInfo.revCount or 0)}-${self.sourceInfo.shortRev or "dirty"}";
           root = ./.;
           nativeBuildInputs = with pkgs; [ pkg-config ];
           buildInputs = with pkgs; [ openssl systemd ];
