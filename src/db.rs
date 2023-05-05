@@ -18,6 +18,8 @@ struct DatabaseInner {
     add_follow: Statement,
     del_follow: Statement,
     get_following_inboxes: Statement,
+    get_follows_count: Statement,
+    get_followers_count: Statement,
 }
 
 impl Database {
@@ -46,6 +48,12 @@ impl Database {
         let get_following_inboxes = client.prepare("SELECT DISTINCT inbox FROM follows WHERE actor=$1")
             .await
             .unwrap();
+        let get_follows_count = client.prepare("SELECT COUNT(id) FROM follows")
+            .await
+            .unwrap();
+        let get_followers_count = client.prepare("SELECT COUNT(DISTINCT id) FROM follows")
+            .await
+            .unwrap();
 
         Database {
             inner: Arc::new(DatabaseInner {
@@ -53,6 +61,8 @@ impl Database {
                 add_follow,
                 del_follow,
                 get_following_inboxes,
+                get_follows_count,
+                get_followers_count,
             }),
         }
     }
@@ -84,5 +94,17 @@ impl Database {
         Ok(rows.into_iter()
            .map(|row| row.get(0))
         )
+    }
+
+    pub async fn get_follows_count(&self) -> Result<i64, Error> {
+        let row = self.inner.client.query_one(&self.inner.get_follows_count, &[])
+            .await?;
+        Ok(row.get(0))
+    }
+
+    pub async fn get_followers_count(&self) -> Result<i64, Error> {
+        let row = self.inner.client.query_one(&self.inner.get_followers_count, &[])
+            .await?;
+        Ok(row.get(0))
     }
 }

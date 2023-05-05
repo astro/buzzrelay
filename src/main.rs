@@ -231,6 +231,43 @@ async fn post_relay(
     }
 }
 
+async fn nodeinfo(axum::extract::State(state): axum::extract::State<State>) -> Response {
+    let follows_count = state.database.get_follows_count()
+        .await
+        .unwrap_or(0);
+    let followers_count = state.database.get_followers_count()
+        .await
+        .unwrap_or(0);
+
+    Json(json!({
+        "version": "2.1",
+        "software": {
+            "name": env!("CARGO_PKG_NAME"),
+            "version": env!("CARGO_PKG_VERSION"),
+            "repository": env!("CARGO_PKG_REPOSITORY"),
+            "homepage": env!("CARGO_PKG_HOMEPAGE"),
+        },
+        "protocols": ["activitypub"],
+        "services": {
+            "inbound": [],
+            "outbound": []
+        },
+        "openRegistrations": false,
+        "usage": {
+            "users": {
+                "total": followers_count,
+                "activeHalfyear": followers_count,
+                "activeMonth": followers_count,
+            },
+            "localPosts": follows_count,
+            "localComments": 0
+        },
+        "metadata": {
+            "rust_version": env!("CARGO_PKG_RUST_VERSION"),
+        }
+    })).into_response()
+}
+
 #[tokio::main]
 async fn main() {
     exit_on_panic();
@@ -280,6 +317,7 @@ async fn main() {
         .route("/tag/:tag", get(get_tag_actor).post(post_tag_relay))
         .route("/instance/:instance", get(get_instance_actor).post(post_instance_relay))
         .route("/.well-known/webfinger", get(webfinger))
+        .route("/.well-known/nodeinfo", get(nodeinfo))
         .route("/metrics", get(|| async move {
             recorder.render().into_response()
         }))

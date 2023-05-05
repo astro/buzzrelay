@@ -2,6 +2,8 @@
 name = "buzzrelay"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/astro/buzzrelay"
+homepage = "https://relay.fedi.buzz"
 
 [dependencies]
 axum = "0.6"
