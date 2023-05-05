@@ -80,6 +80,7 @@
             Restart = "always";
             RestartSec = "1s";
             WatchdogSec = "1800s";
+            LimitNOFile = 40000;
           };
         };
       };
