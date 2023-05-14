@@ -62,6 +62,8 @@ struct Tag<'a> {
 }
 
 struct Job {
+    post_url: Arc<String>,
+    actor_id: Arc<String>,
     body: Arc<Vec<u8>>,
     key_id: String,
     private_key: Arc<PrivateKey>,
@@ -71,8 +73,8 @@ fn spawn_worker(client: Arc<reqwest::Client>, inbox: String) -> Sender<Job> {
     let (tx, mut rx) = channel(1024);
 
     tokio::spawn(async move {
-        while let Some(Job { key_id, private_key, body }) = rx.next().await {
-            tracing::debug!("relay to {}", inbox);
+        while let Some(Job { post_url, actor_id, key_id, private_key, body }) = rx.next().await {
+            tracing::debug!("relay {} from {} to {}", post_url, actor_id, inbox);
             if let Err(e) = send::send_raw(
                 &client, &inbox,
                 &key_id, &private_key, body
@@ -117,7 +119,7 @@ pub fn spawn(
                 }
             };
             let post_url = match post.url {
-                Some(url) => url,
+                Some(ref url) => Arc::new(url.to_string()),
                 // skip reposts
                 None => {
                     increment_counter!("relay_posts_total", "action" => "skip");
@@ -131,14 +133,14 @@ pub fn spawn(
                     continue;
                 }
 
-                let actor_id = actor.uri();
+                let actor_id = Arc::new(actor.uri());
                 let body = json!({
                     "@context": "https://www.w3.org/ns/activitystreams",
                     "type": "Announce",
-                    "actor": &actor_id,
+                    "actor": **&actor_id,
                     "to": ["https://www.w3.org/ns/activitystreams#Public"],
                     "object": &post.uri,
-                    "id": &post_url,
+                    "id": **&post_url,
                 });
                 let body = Arc::new(
                     serde_json::to_vec(&body)
@@ -151,6 +153,8 @@ pub fn spawn(
                     seen_inboxes.insert(inbox.clone());
 
                     let job = Job {
+                        post_url: post_url.clone(),
+                        actor_id: actor_id.clone(),
                         body: body.clone(),
                         key_id: actor.key_id(),
                         private_key: private_key.clone(),
