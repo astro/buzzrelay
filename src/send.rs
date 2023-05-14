@@ -3,28 +3,10 @@ use std::{
     time::Instant,
 };
 use http::StatusCode;
-use http_digest_headers::{DigestHeader, DigestMethod};
 use metrics::histogram;
 use serde::Serialize;
 use sigh::{PrivateKey, SigningConfig, alg::RsaSha256};
-
-#[derive(Debug, thiserror::Error)]
-pub enum SendError {
-    #[error("HTTP Digest generation error")]
-    Digest,
-    #[error("JSON encoding error")]
-    Json(#[from] serde_json::Error),
-    #[error("Signature error")]
-    Signature(#[from] sigh::Error),
-    #[error("HTTP request error")]
-    HttpReq(#[from] http::Error),
-    #[error("HTTP client error")]
-    Http(#[from] reqwest::Error),
-    #[error("Invalid URI")]
-    InvalidUri,
-    #[error("Error response from remote")]
-    Response(String),
-}
+use crate::{digest, error::Error};
 
 pub async fn send<T: Serialize>(
     client: &reqwest::Client,
@@ -32,10 +14,10 @@ pub async fn send<T: Serialize>(
     key_id: &str,
     private_key: &PrivateKey,
     body: &T,
-) -> Result<(), SendError> {
+) -> Result<(), Error> {
     let body = Arc::new(
         serde_json::to_vec(body)
-            .map_err(SendError::Json)?
+            .map_err(Error::Json)?
     );
     send_raw(client, uri, key_id, private_key, body).await
 }
@@ -46,12 +28,12 @@ pub async fn send_raw(
     key_id: &str,
     private_key: &PrivateKey,
     body: Arc<Vec<u8>>,
-) -> Result<(), SendError> {
+) -> Result<(), Error> {
     let url = reqwest::Url::parse(uri)
         .map_err(|_| Error::InvalidUri)?;
-    let host = format!("{}", url.host().ok_or(SendError::InvalidUri)?);
+    let host = format!("{}", url.host().ok_or(Error::InvalidUri)?);
     let digest_header = digest::generate_header(&body)
-        .map_err(|()| SendError::Digest)?;
+        .map_err(|()| Error::Digest)?;
     let mut req = http::Request::builder()
         .method("POST")
         .uri(uri)
@@ -61,7 +43,7 @@ pub async fn send_raw(
             .replace("+0000", "GMT"))
         .header("digest", digest_header)
         .body(body.as_ref().clone())
-        .map_err(SendError::HttpReq)?;
+        .map_err(Error::HttpReq)?;
     let t1 = Instant::now();
     SigningConfig::new(RsaSha256, private_key, key_id)
         .sign(&mut req)?;
@@ -79,6 +61,6 @@ pub async fn send_raw(
         tracing::error!("send_raw {} response HTTP {}", url, res.status());
         let response = res.text().await?;
         tracing::error!("send_raw {} response body: {:?}", url, response);
-        Err(SendError::Response(response))
+        Err(Error::Response(response))
     }
 }

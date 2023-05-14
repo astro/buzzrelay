@@ -1,8 +1,7 @@
 use http::StatusCode;
 use serde::de::DeserializeOwned;
 use sigh::{PrivateKey, SigningConfig, alg::RsaSha256};
-use crate::digest;
-use crate::send::SendError;
+use crate::{digest, error::Error};
 
 pub async fn fetch<T>(client: &reqwest::Client, url: &str) -> Result<T, reqwest::Error>
 where
@@ -21,13 +20,13 @@ pub async fn authorized_fetch<T>(
     uri: &str,
     key_id: &str,
     private_key: &PrivateKey,
-) -> Result<T, SendError>
+) -> Result<T, Error>
 where
     T: DeserializeOwned,
 {
     let url = reqwest::Url::parse(uri)
-        .map_err(|_| SendError::InvalidUri)?;
-    let host = format!("{}", url.host().ok_or(SendError::InvalidUri)?);
+        .map_err(|_| Error::InvalidUri)?;
+    let host = format!("{}", url.host().ok_or(Error::InvalidUri)?);
     let digest_header = digest::generate_header(&[])
         .expect("digest::generate_header");
     let mut req = http::Request::builder()
@@ -47,6 +46,6 @@ where
     if res.status() >= StatusCode::OK && res.status() < StatusCode::MULTIPLE_CHOICES {
         Ok(res.json().await?)
     } else {
-        Err(SendError::Response(format!("{}", res.text().await?)))
+        Err(Error::Response(format!("{}", res.text().await?)))
     }
 }

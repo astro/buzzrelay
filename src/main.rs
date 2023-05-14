@@ -14,6 +14,7 @@ use std::{net::SocketAddr, sync::Arc, time::Duration, collections::HashMap};
 use std::{panic, process};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+mod error;
 mod config;
 mod actor;
 mod db;
