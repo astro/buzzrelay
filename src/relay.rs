@@ -152,10 +152,10 @@ pub fn spawn(
                 let body = json!({
                     "@context": "https://www.w3.org/ns/activitystreams",
                     "type": "Announce",
-                    "actor": **&actor_id,
+                    "actor": *actor_id,
                     "to": ["https://www.w3.org/ns/activitystreams#Public"],
                     "object": &post.uri,
-                    "id": **&post_url,
+                    "id": *post_url,
                 });
                 let body = Arc::new(
                     serde_json::to_vec(&body)
