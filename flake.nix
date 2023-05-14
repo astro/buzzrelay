@@ -33,7 +33,7 @@
                 -D warnings \
                 -A clippy::nonminimal_bool''
             ];
-          meta.description = "Send Prometheus alerts to XMPP Multi-User Chatrooms";
+          meta.description = "The buzzing ActivityPub relay";
         };
     in
     utils.lib.eachDefaultSystem
