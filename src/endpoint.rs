@@ -109,7 +109,7 @@ impl<'a> Endpoint<'a> {
         private_key: &PrivateKey,
     ) -> Result<Actor, Error> {
         let remote_actor: Actor = serde_json::from_value(
-            authorized_fetch(&client, &self.remote_actor_uri, key_id, private_key).await?
+            authorized_fetch(client, &self.remote_actor_uri, key_id, private_key).await?
         )?;
         let public_key = PublicKey::from_pem(remote_actor.public_key.pem.as_bytes())?;
         if ! (self.signature.verify(&public_key)?) {

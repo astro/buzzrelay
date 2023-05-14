@@ -34,6 +34,6 @@ where
     if res.status() >= StatusCode::OK && res.status() < StatusCode::MULTIPLE_CHOICES {
         Ok(res.json().await?)
     } else {
-        Err(Error::Response(format!("{}", res.text().await?)))
+        Err(Error::Response(res.text().await?))
     }
 }
