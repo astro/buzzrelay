@@ -47,22 +47,11 @@ pub async fn send_raw(
     private_key: &PrivateKey,
     body: Arc<Vec<u8>>,
 ) -> Result<(), SendError> {
-    let mut digest_header = DigestHeader::new()
-        .with_method(DigestMethod::SHA256, &body)
-        .map(|h| format!("{}", h))
-        .map_err(|_| SendError::Digest)?;
-    if digest_header.starts_with("sha-") {
-        digest_header.replace_range(..4, "SHA-");
-    }
-    // mastodon uses base64::alphabet::STANDARD, not base64::alphabet::URL_SAFE
-    digest_header.replace_range(
-        7..,
-        &digest_header[7..].replace('-', "+").replace('_', "/")
-    );
-
     let url = reqwest::Url::parse(uri)
-        .map_err(|_| SendError::InvalidUri)?;
+        .map_err(|_| Error::InvalidUri)?;
     let host = format!("{}", url.host().ok_or(SendError::InvalidUri)?);
+    let digest_header = digest::generate_header(&body)
+        .map_err(|()| SendError::Digest)?;
     let mut req = http::Request::builder()
         .method("POST")
         .uri(uri)
