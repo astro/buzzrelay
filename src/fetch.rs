@@ -3,18 +3,6 @@ use serde::de::DeserializeOwned;
 use sigh::{PrivateKey, SigningConfig, alg::RsaSha256};
 use crate::{digest, error::Error};
 
-pub async fn fetch<T>(client: &reqwest::Client, url: &str) -> Result<T, reqwest::Error>
-where
-    T: DeserializeOwned,
-{
-    client.get(url)
-        .header("accept", "application/activity+json")
-        .send()
-        .await?
-        .json()
-        .await
-}
-
 pub async fn authorized_fetch<T>(
     client: &reqwest::Client,
     uri: &str,

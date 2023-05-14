@@ -9,11 +9,12 @@ use axum::{
 
 use http_digest_headers::{DigestHeader};
 
-use sigh::{Signature, PublicKey, Key};
+use sigh::{Signature, PublicKey, Key, PrivateKey};
 
 
-use crate::fetch::fetch;
+use crate::fetch::authorized_fetch;
 use crate::activitypub::Actor;
+use crate::error::Error;
 
 const SIGNATURE_HEADERS_REQUIRED: &[&str] = &[
     "(request-target)",
@@ -21,20 +22,14 @@ const SIGNATURE_HEADERS_REQUIRED: &[&str] = &[
     "digest",
 ];
 
-#[derive(Clone, Debug)]
-pub struct Endpoint {
+pub struct Endpoint<'a> {
     pub payload: serde_json::Value,
-    pub actor: Actor,
+    signature: Signature<'a>,
+    remote_actor_uri: String,
 }
 
-// impl Endpoint {
-//     pub fn parse<T: DeserializeOwned>(self) -> Result<T, serde_json::Error> {
-//         serde_json::from_value(self.payload)
-//     }
-// }
-
 #[async_trait]
-impl<S, B> FromRequest<S, B> for Endpoint
+impl<'a, S, B> FromRequest<S, B> for Endpoint<'a>
 where
     B: HttpBody + Send + 'static,
     B::Data: Send,
@@ -95,27 +90,32 @@ where
         // parse body
         let payload: serde_json::Value = serde_json::from_slice(&bytes)
             .map_err(|_| (StatusCode::BAD_REQUEST, "Error parsing JSON".to_string()))?;
-        let actor_uri = if let Some(serde_json::Value::String(actor_uri)) = payload.get("actor") {
-            actor_uri
+        let remote_actor_uri = if let Some(serde_json::Value::String(actor_uri)) = payload.get("actor") {
+            actor_uri.to_string()
         } else {
             return Err((StatusCode::BAD_REQUEST, "Actor missing".to_string()));
         };
 
-        // validate actor
-        let client = Arc::from_ref(state);
-        let actor: Actor =
-            serde_json::from_value(
-                fetch(&client, actor_uri).await
-                    .map_err(|e| (StatusCode::BAD_GATEWAY, format!("{}", e)))?
-            ).map_err(|e| (StatusCode::BAD_GATEWAY, format!("Invalid actor: {}", e)))?;
-        let public_key = PublicKey::from_pem(actor.public_key.pem.as_bytes())
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("{:?}", e)))?;
-        if !(signature.verify(&public_key)
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("{:?}", e)))?)
-        {
-            return Err((StatusCode::BAD_REQUEST, "Signature verification failed".to_string()));
+        return Ok(Endpoint { payload, signature, remote_actor_uri });
+    }
+}
+
+impl<'a> Endpoint<'a> {
+    /// Validates the requesting actor
+    pub async fn remote_actor(
+        &self,
+        client: &reqwest::Client,
+        key_id: &str,
+        private_key: &PrivateKey,
+    ) -> Result<Actor, Error> {
+        let remote_actor: Actor = serde_json::from_value(
+            authorized_fetch(&client, &self.remote_actor_uri, key_id, private_key).await?
+        )?;
+        let public_key = PublicKey::from_pem(remote_actor.public_key.pem.as_bytes())?;
+        if ! (self.signature.verify(&public_key)?) {
+            return Err(Error::SignatureFail);
         }
-        
-        return Ok(Endpoint { payload, actor });
+
+        Ok(remote_actor)
     }
 }

@@ -120,7 +120,7 @@ async fn get_instance_actor(
 async fn post_tag_relay(
     axum::extract::State(state): axum::extract::State<State>,
     Path(tag): Path<String>,
-    endpoint: endpoint::Endpoint
+    endpoint: endpoint::Endpoint<'_>
 ) -> Response {
     let target = actor::Actor {
         host: state.hostname.clone(),
@@ -132,7 +132,7 @@ async fn post_tag_relay(
 async fn post_instance_relay(
     axum::extract::State(state): axum::extract::State<State>,
     Path(instance): Path<String>,
-    endpoint: endpoint::Endpoint
+    endpoint: endpoint::Endpoint<'_>
 ) -> Response {
     let target = actor::Actor {
         host: state.hostname.clone(),
@@ -143,9 +143,19 @@ async fn post_instance_relay(
 
 async fn post_relay(
     state: State,
-    endpoint: endpoint::Endpoint,
+    endpoint: endpoint::Endpoint<'_>,
     target: actor::Actor
 ) -> Response {
+    let remote_actor = match endpoint.remote_actor(&state.client, &target.key_id(), &state.priv_key).await {
+        Ok(remote_actor) => remote_actor,
+        Err(e) => {
+            track_request("POST", "relay", "bad_actor");
+            return (
+                StatusCode::BAD_REQUEST,
+                format!("Bad actor: {:?}", e)
+            ).into_response();
+        }
+    };
     let action = match serde_json::from_value::<activitypub::Action<serde_json::Value>>(endpoint.payload.clone()) {
         Ok(action) => action,
         Err(e) => {
@@ -168,12 +178,12 @@ async fn post_relay(
                 jsonld_context: serde_json::Value::String("https://www.w3.org/ns/activitystreams".to_string()),
                 action_type: "Accept".to_string(),
                 actor: target.uri(),
-                to: Some(json!(endpoint.actor.id.clone())),
+                to: Some(json!(remote_actor.id.clone())),
                 id: action.id,
                 object: Some(endpoint.payload),
             };
             let result = send::send(
-                client.as_ref(), &endpoint.actor.inbox,
+                client.as_ref(), &remote_actor.inbox,
                 &target.key_id(),
                 &priv_key,
                 &accept,
@@ -181,8 +191,8 @@ async fn post_relay(
             match result {
                 Ok(()) => {
                     match state.database.add_follow(
-                        &endpoint.actor.id,
-                        &endpoint.actor.inbox,
+                        &remote_actor.id,
+                        &remote_actor.inbox,
                         &target.uri(),
                     ).await {
                         Ok(()) => {
@@ -208,7 +218,7 @@ async fn post_relay(
         ).into_response()
     } else if action.action_type == "Undo" && object_type == Some("Follow".to_string()) {
         match state.database.del_follow(
-            &endpoint.actor.id,
+            &remote_actor.id,
             &target.uri(),
         ).await {
             Ok(()) => {

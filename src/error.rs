@@ -6,6 +6,8 @@ pub enum Error {
     Json(#[from] serde_json::Error),
     #[error("Signature error")]
     Signature(#[from] sigh::Error),
+    #[error("Signature verification failure")]
+    SignatureFail,
     #[error("HTTP request error")]
     HttpReq(#[from] http::Error),
     #[error("HTTP client error")]
