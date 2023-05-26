@@ -275,7 +275,13 @@ async fn nodeinfo(axum::extract::State(state): axum::extract::State<State>) -> R
         },
         "metadata": {
             "rust_version": env!("CARGO_PKG_RUST_VERSION"),
-        }
+        },
+        "links": vec![
+            json!({
+                "rel": "http://nodeinfo.diaspora.software/ns/schema/2.1",
+                "href": format!("https://{}/.well-known/nodeinfo", state.hostname),
+            }),
+        ],
     })).into_response()
 }
 
