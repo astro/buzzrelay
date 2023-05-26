@@ -174,12 +174,18 @@ async fn post_relay(
         let priv_key = state.priv_key.clone();
         let client = state.client.clone();
         tokio::spawn(async move {
+            let accept_id = format!(
+                "https://{}/activity/accept/{}/{}",
+                state.hostname,
+                urlencoding::encode(&target.uri()),
+                urlencoding::encode(&remote_actor.inbox),
+            );
             let accept = activitypub::Action {
                 jsonld_context: serde_json::Value::String("https://www.w3.org/ns/activitystreams".to_string()),
                 action_type: "Accept".to_string(),
                 actor: target.uri(),
                 to: Some(json!(remote_actor.id.clone())),
-                id: action.id,
+                id: accept_id,
                 object: Some(endpoint.payload),
             };
             let result = send::send(
