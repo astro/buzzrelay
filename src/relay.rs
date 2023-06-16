@@ -43,7 +43,7 @@ impl Post<'_> {
             .chain(
                 self.tags()
                     .into_iter()
-                    .map(|ref s| {
+                    .flat_map(|ref s| {
                         // Don't handle the empty hashtag `#`
                         if s.is_empty() {
                             return vec![];
@@ -65,7 +65,6 @@ impl Post<'_> {
                             vec![actor1]
                         }
                     })
-                    .flatten()
             )
     }
 
