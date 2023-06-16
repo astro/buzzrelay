@@ -194,6 +194,10 @@ pub fn spawn(
                     }
                     seen_inboxes.insert(inbox);
 
+                    // Prevent relaying back to the originating instance.
+                    if inbox_url.host_str() == post_url_url.host_str() {
+                        continue;
+                    }
 
                     // Lookup/create worker queue per inbox.
                     let tx = workers.entry(inbox_url.host_str().unwrap_or("").to_string())
