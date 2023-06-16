@@ -43,7 +43,29 @@ impl Post<'_> {
             .chain(
                 self.tags()
                     .into_iter()
-                    .map(|ref s| actor::ActorKind::from_tag(s))
+                    .map(|ref s| {
+                        // Don't handle the empty hashtag `#`
+                        if s.is_empty() {
+                            return vec![];
+                        }
+
+                        let actor1 = actor::ActorKind::from_tag(s);
+
+                        // Distribute hashtags that end in a date to
+                        // followers of the hashtag with the date
+                        // stripped. Example: #dd1302 -> #dd
+                        let first_trailing_digit = s.rfind(|c| ! char::is_digit(c, 10))
+                            .map(|first_trailing_digit| first_trailing_digit + 1)
+                            .unwrap_or(s.len());
+                        if  first_trailing_digit > 0 && first_trailing_digit < s.len() {
+                            let tag = &s[..first_trailing_digit];
+                            let actor2 = actor::ActorKind::from_tag(tag);
+                            vec![actor1, actor2]
+                        } else {
+                            vec![actor1]
+                        }
+                    })
+                    .flatten()
             )
     }
 
@@ -190,4 +212,70 @@ pub fn spawn(
             histogram!("relay_post_duration", t2 - t1);
         }
     });
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use actor::ActorKind;
+
+    #[test]
+    fn post_relay_kind() {
+        let post = Post {
+            url: Some("http://example.com/post/1"),
+            uri: "http://example.com/post/1",
+            tags: Some(vec![Tag {
+                name: "foo",
+            }]),
+        };
+        let mut kinds = post.relay_target_kinds();
+        assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::TagRelay("foo".to_string())));
+        assert_eq!(kinds.next(), None);
+    }
+
+    #[test]
+    fn post_relay_kind_empty() {
+        let post = Post {
+            url: Some("http://example.com/post/1"),
+            uri: "http://example.com/post/1",
+            tags: Some(vec![Tag {
+                name: "",
+            }]),
+        };
+        let mut kinds = post.relay_target_kinds();
+        assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
+        assert_eq!(kinds.next(), None);
+    }
+
+    #[test]
+    fn post_relay_kind_numeric() {
+        let post = Post {
+            url: Some("http://example.com/post/1"),
+            uri: "http://example.com/post/1",
+            tags: Some(vec![Tag {
+                name: "23",
+            }]),
+        };
+        let mut kinds = post.relay_target_kinds();
+        assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::TagRelay("23".to_string())));
+        assert_eq!(kinds.next(), None);
+    }
+
+    #[test]
+    fn post_relay_kind_date() {
+        let post = Post {
+            url: Some("http://example.com/post/1"),
+            uri: "http://example.com/post/1",
+            tags: Some(vec![Tag {
+                name: "dd1302",
+            }]),
+        };
+        let mut kinds = post.relay_target_kinds();
+        assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::TagRelay("dd1302".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::TagRelay("dd".to_string())));
+        assert_eq!(kinds.next(), None);
+    }
 }
