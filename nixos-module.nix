@@ -33,6 +33,10 @@
       type = types.str;
       default = "relay";
     };
+    logLevel = mkOption {
+      type = types.enum [ "ERROR" "WARN" "INFO" "DEBUG" "TRACE" ];
+      default = "INFO";
+    };
   };
 
   config =
@@ -70,6 +74,7 @@
         systemd.services.buzzrelay = {
           wantedBy = [ "multi-user.target" ];
           after = [ "postgresql.service" "network-online.target" ];
+          environment.RUST_LOG = "buzzrelay=${cfg.logLevel}";
           serviceConfig = {
             Type = "notify";
             WorkingDirectory = "${buzzrelay}/share/buzzrelay";
