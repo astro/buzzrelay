@@ -54,10 +54,19 @@ impl Post<'_> {
                         // Distribute hashtags that end in a date to
                         // followers of the hashtag with the date
                         // stripped. Example: #dd1302 -> #dd
-                        let first_trailing_digit = s.rfind(|c| ! char::is_digit(c, 10))
-                            .map(|first_trailing_digit| first_trailing_digit + 1)
-                            .unwrap_or(s.len());
-                        if  first_trailing_digit > 0 && first_trailing_digit < s.len() {
+                        let mut first_trailing_digit = 0;
+                        let mut scanning_digits = false;
+                        for (pos, c) in s.char_indices() {
+                            if char::is_digit(c, 10) {
+                                if ! scanning_digits {
+                                    first_trailing_digit = pos;
+                                    scanning_digits = true;
+                                }
+                            } else {
+                                scanning_digits = false;
+                            }
+                        }
+                        if scanning_digits && first_trailing_digit > 0 {
                             let tag = &s[..first_trailing_digit];
                             let actor2 = actor::ActorKind::from_tag(tag);
                             vec![actor1, actor2]
@@ -289,6 +298,21 @@ mod test {
         assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
         assert_eq!(kinds.next(), Some(ActorKind::TagRelay("dd1302".to_string())));
         assert_eq!(kinds.next(), Some(ActorKind::TagRelay("dd".to_string())));
+        assert_eq!(kinds.next(), None);
+    }
+
+    #[test]
+    fn post_relay_kind_jp() {
+        let post = Post {
+            url: Some("http://example.com/post/1"),
+            uri: "http://example.com/post/1",
+            tags: Some(vec![Tag {
+                name: "スコティッシュ・フォールド・ロングヘアー",
+            }]),
+        };
+        let mut kinds = post.relay_target_kinds();
+        assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::TagRelay("sukoteitusiyuhuorudoronguhea".to_string())));
         assert_eq!(kinds.next(), None);
     }
 }
