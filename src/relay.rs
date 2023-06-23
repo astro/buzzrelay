@@ -117,7 +117,7 @@ fn spawn_worker(client: Arc<reqwest::Client>) -> Sender<Job> {
                 continue;
             }
 
-            tracing::trace!("relay {} from {} to {}", post_url, actor_id, inbox_url);
+            tracing::debug!("relay {} from {} to {}", post_url, actor_id, inbox_url);
             last_request = Some(Instant::now());
             if let Err(e) = send::send_raw(
                 &client, inbox_url.as_str(),
