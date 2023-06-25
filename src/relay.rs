@@ -180,13 +180,14 @@ pub fn spawn(
                 }
 
                 let actor_id = Arc::new(actor.uri());
+                let announce_id = format!("https://{}/announce/{}", hostname, urlencoding::encode(&post_url));
                 let body = json!({
                     "@context": "https://www.w3.org/ns/activitystreams",
                     "type": "Announce",
                     "actor": *actor_id,
                     "to": ["https://www.w3.org/ns/activitystreams#Public"],
                     "object": &post.uri,
-                    "id": *post_url,
+                    "id": announce_id,
                 });
                 let Ok(post_url_url) = reqwest::Url::parse(&post_url) else { continue; };
                 let body = Arc::new(
