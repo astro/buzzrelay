@@ -248,6 +248,17 @@ async fn post_relay(
     }
 }
 
+/// An empty ActivityStreams outbox just to satisfy the spec
+async fn outbox() -> Response {
+    Json(json!({
+        "@context": "https://www.w3.org/ns/activitystreams",
+        "summary": "buzzrelay stub outbox",
+        "type": "OrderedCollection",
+        "totalItems": 0,
+        "orderedItems": []
+    })).into_response()
+}
+
 async fn nodeinfo(axum::extract::State(state): axum::extract::State<State>) -> Response {
     let follows_count = state.database.get_follows_count()
         .await
@@ -339,6 +350,7 @@ async fn main() {
     let app = Router::new()
         .route("/tag/:tag", get(get_tag_actor).post(post_tag_relay))
         .route("/instance/:instance", get(get_instance_actor).post(post_instance_relay))
+        .route("/outbox", get(outbox))
         .route("/.well-known/webfinger", get(webfinger))
         .route("/.well-known/nodeinfo", get(nodeinfo))
         .route("/metrics", get(|| async move {

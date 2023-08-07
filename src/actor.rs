@@ -56,6 +56,7 @@ impl Actor {
                 url: "https://fedi.buzz/assets/favicon48.png".to_string(),
             }),
             inbox: self.uri(),
+            outbox: format!("https://{}/outbox", self.host),
             public_key: activitypub::ActorPublicKey {
                 id: self.key_id(),
                 owner: Some(self.uri()),

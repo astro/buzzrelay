@@ -11,6 +11,7 @@ pub struct Actor {
     pub name: Option<String>,
     pub icon: Option<Media>,
     pub inbox: String,
+    pub outbox: String,
     #[serde(rename = "publicKey")]
     pub public_key: ActorPublicKey,
     #[serde(rename = "preferredUsername")]
