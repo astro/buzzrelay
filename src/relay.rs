@@ -174,6 +174,7 @@ pub fn spawn(
             };
             let mut seen_actors = HashSet::new();
             let mut seen_inboxes = HashSet::new();
+            let published = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
             for actor in post.relay_targets(hostname.clone()) {
                 if seen_actors.contains(&actor) {
                     continue;
@@ -185,6 +186,7 @@ pub fn spawn(
                     "@context": "https://www.w3.org/ns/activitystreams",
                     "type": "Announce",
                     "actor": *actor_id,
+                    "published": &published,
                     "to": ["https://www.w3.org/ns/activitystreams#Public"],
                     "object": &post.uri,
                     "id": announce_id,
