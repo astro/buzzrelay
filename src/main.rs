@@ -350,7 +350,8 @@ async fn main() {
     let app = Router::new()
         .route("/tag/:tag", get(get_tag_actor).post(post_tag_relay))
         .route("/instance/:instance", get(get_instance_actor).post(post_instance_relay))
-        .route("/outbox", get(outbox))
+        .route("/tag/:tag/outbox", get(outbox))
+        .route("/instance/:instance/outbox", get(outbox))
         .route("/.well-known/webfinger", get(webfinger))
         .route("/.well-known/nodeinfo", get(nodeinfo))
         .route("/metrics", get(|| async move {
