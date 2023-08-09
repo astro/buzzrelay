@@ -3,6 +3,12 @@ streams:
   # The fedi.buzz firehose stream
   - "https://fedi.buzz/api/v1/streaming/public"
   # You may list the streaming API of other instances here
+  - "https://example.org/api/v1/streaming/public"
+  # Starting with Mastodon v4.2.0 this API requires
+  # an access_token that must be obtained from
+  # https://example.com/settings/applications/new
+  # with permission `read:statuses`
+  - "https://example.com/api/v1/streaming/public?access_token=EfDOWQkbWFfWsZB-4Xv0axfraMTRzSV0GhB1FVAleBs"
 # external https hostname
 hostname: relay.fedi.buzz
 # where your reverse proxy will connect to
