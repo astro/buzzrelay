@@ -40,7 +40,7 @@ impl Post<'_> {
     fn relay_target_kinds(&self) -> impl Iterator<Item = actor::ActorKind> {
         self.host()
             .into_iter()
-            .map(actor::ActorKind::InstanceRelay)
+            .map(actor::ActorKind::Instance)
             .chain(
                 self.tags()
                     .into_iter()
@@ -259,8 +259,8 @@ mod test {
             }]),
         };
         let mut kinds = post.relay_target_kinds();
-        assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
-        assert_eq!(kinds.next(), Some(ActorKind::TagRelay("foo".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::Instance("example.com".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::Tag("foo".to_string())));
         assert_eq!(kinds.next(), None);
     }
 
@@ -274,7 +274,7 @@ mod test {
             }]),
         };
         let mut kinds = post.relay_target_kinds();
-        assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::Instance("example.com".to_string())));
         assert_eq!(kinds.next(), None);
     }
 
@@ -288,8 +288,8 @@ mod test {
             }]),
         };
         let mut kinds = post.relay_target_kinds();
-        assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
-        assert_eq!(kinds.next(), Some(ActorKind::TagRelay("23".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::Instance("example.com".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::Tag("23".to_string())));
         assert_eq!(kinds.next(), None);
     }
 
@@ -303,9 +303,9 @@ mod test {
             }]),
         };
         let mut kinds = post.relay_target_kinds();
-        assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
-        assert_eq!(kinds.next(), Some(ActorKind::TagRelay("dd1302".to_string())));
-        assert_eq!(kinds.next(), Some(ActorKind::TagRelay("dd".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::Instance("example.com".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::Tag("dd1302".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::Tag("dd".to_string())));
         assert_eq!(kinds.next(), None);
     }
 
@@ -319,8 +319,8 @@ mod test {
             }]),
         };
         let mut kinds = post.relay_target_kinds();
-        assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
-        assert_eq!(kinds.next(), Some(ActorKind::TagRelay("sukoteitusiyuhuorudoronguhea".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::Instance("example.com".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::Tag("sukoteitusiyuhuorudoronguhea".to_string())));
         assert_eq!(kinds.next(), None);
     }
 }

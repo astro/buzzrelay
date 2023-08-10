@@ -64,16 +64,16 @@ async fn webfinger(
         if resource.starts_with("acct:tag-") {
             let off = "acct:tag-".len();
             let at = resource.find('@');
-            (actor::ActorKind::TagRelay(resource[off..at.unwrap_or(resource.len())].to_string()),
+            (actor::ActorKind::Tag(resource[off..at.unwrap_or(resource.len())].to_string()),
              at.map_or_else(|| state.hostname.clone(), |at| Arc::new(resource[at + 1..].to_string())))
         } else if resource.starts_with("acct:instance-") {
             let off = "acct:instance-".len();
             let at = resource.find('@');
-            (actor::ActorKind::InstanceRelay(resource[off..at.unwrap_or(resource.len())].to_string()),
+            (actor::ActorKind::Instance(resource[off..at.unwrap_or(resource.len())].to_string()),
              at.map_or_else(|| state.hostname.clone(), |at| Arc::new(resource[at + 1..].to_string())))
         } else if resource.starts_with("acct:ingest") {
             let at = resource.find('@');
-            (actor::ActorKind::IngestRelay, at.map_or_else(|| state.hostname.clone(), |at| Arc::new(resource[at + 1..].to_string())))
+            (actor::ActorKind::Ingest, at.map_or_else(|| state.hostname.clone(), |at| Arc::new(resource[at + 1..].to_string())))
         } else {
             track_request("GET", "webfinger", "not_found");
             return StatusCode::NOT_FOUND.into_response();
@@ -116,7 +116,7 @@ async fn get_instance_actor(
     track_request("GET", "actor", "instance");
     let target = actor::Actor {
         host: state.hostname.clone(),
-        kind: actor::ActorKind::InstanceRelay(instance.to_lowercase()),
+        kind: actor::ActorKind::Instance(instance.to_lowercase()),
     };
     target.as_activitypub(&state.pub_key)
         .into_response()
@@ -128,7 +128,7 @@ async fn get_ingest_actor(
     track_request("GET", "actor", "ingest");
     let target = actor::Actor {
         host: state.hostname.clone(),
-        kind: actor::ActorKind::IngestRelay,
+        kind: actor::ActorKind::Ingest,
     };
     target.as_activitypub(&state.pub_key)
         .into_response()
@@ -153,7 +153,7 @@ async fn post_instance_relay(
 ) -> Response {
     let target = actor::Actor {
         host: state.hostname.clone(),
-        kind: actor::ActorKind::InstanceRelay(instance.to_lowercase()),
+        kind: actor::ActorKind::Instance(instance.to_lowercase()),
     };
     post_relay(state, endpoint, target).await
 }
@@ -164,7 +164,7 @@ async fn post_ingest_relay(
 ) -> Response{
     let target = actor::Actor {
         host: state.hostname.clone(),
-        kind: actor::ActorKind::IngestRelay,
+        kind: actor::ActorKind::Ingest,
     };
     post_relay(state, endpoint, target).await
 }
@@ -270,7 +270,7 @@ async fn post_relay(
                  ).into_response()
             }
         }
-    } else if let actor::ActorKind::IngestRelay = target.kind {
+    } else if let actor::ActorKind::Ingest = target.kind {
         match state.ingest_tx.send(endpoint.payload.to_string()).await {
             Ok(()) => {
                 track_request("POST", "relay", "ingest");
