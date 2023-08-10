@@ -6,6 +6,7 @@ use serde_json::json;
 use sigh::PrivateKey;
 use tokio::{
     sync::mpsc::Receiver,
+    select,
 };
 use crate::{db::Database, send, actor};
 
@@ -147,14 +148,18 @@ pub fn spawn(
     hostname: Arc<String>,
     database: Database,
     private_key: PrivateKey,
-    mut stream_rx: Receiver<String>
+    mut stream_rx: Receiver<String>,
+    mut ingest_rx: Receiver<String>,
 ) {
     let private_key = Arc::new(private_key);
 
     tokio::spawn(async move {
         let mut workers = HashMap::new();
 
-        while let Some(data) = stream_rx.recv().await {
+        while let Some(data) = select!{
+            data = stream_rx.recv() => data,
+            data = ingest_rx.recv() => data,
+        } {
             let t1 = Instant::now();
             let post: Post = match serde_json::from_str(&data) {
                 Ok(post) => post,

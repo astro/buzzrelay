@@ -8,6 +8,7 @@ use crate::activitypub;
 pub enum ActorKind {
     TagRelay(String),
     InstanceRelay(String),
+    IngestRelay,
 }
 
 impl ActorKind {
@@ -32,6 +33,7 @@ impl Actor {
                 format!("https://{}/tag/{}", self.host, tag),
             ActorKind::InstanceRelay(instance) =>
                 format!("https://{}/instance/{}", self.host, instance),
+            ActorKind::IngestRelay => format!("https://{}/ingest", self.host),
         }
     }
 
@@ -49,6 +51,8 @@ impl Actor {
                     format!("#{}", tag),
                 ActorKind::InstanceRelay(instance) =>
                     instance.to_string(),
+                ActorKind::IngestRelay =>
+                    self.host.to_string()
             }),
             icon: Some(activitypub::Media {
                 media_type: "Image".to_string(),
@@ -67,6 +71,8 @@ impl Actor {
                     format!("tag-{}", tag),
                 ActorKind::InstanceRelay(instance) =>
                     format!("instance-{}", instance),
+                ActorKind::IngestRelay =>
+                    String::from(env!("CARGO_PKG_NAME")),
             }),
         }
     }

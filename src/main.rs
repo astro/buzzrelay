@@ -13,6 +13,7 @@ use sigh::{PrivateKey, PublicKey};
 use std::{net::SocketAddr, sync::Arc, time::Duration, collections::HashMap};
 use std::{panic, process};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use tokio::sync::mpsc::{channel, Sender};
 
 mod error;
 mod config;
@@ -34,6 +35,7 @@ struct State {
     hostname: Arc<String>,
     priv_key: PrivateKey,
     pub_key: PublicKey,
+    ingest_tx: Sender<String>,
 }
 
 
@@ -69,6 +71,9 @@ async fn webfinger(
             let at = resource.find('@');
             (actor::ActorKind::InstanceRelay(resource[off..at.unwrap_or(resource.len())].to_string()),
              at.map_or_else(|| state.hostname.clone(), |at| Arc::new(resource[at + 1..].to_string())))
+        } else if resource.starts_with("acct:ingest") {
+            let at = resource.find('@');
+            (actor::ActorKind::IngestRelay, at.map_or_else(|| state.hostname.clone(), |at| Arc::new(resource[at + 1..].to_string())))
         } else {
             track_request("GET", "webfinger", "not_found");
             return StatusCode::NOT_FOUND.into_response();
@@ -117,6 +122,18 @@ async fn get_instance_actor(
         .into_response()
 }
 
+async fn get_ingest_actor(
+    axum::extract::State(state): axum::extract::State<State>,
+) -> Response {
+    track_request("GET", "actor", "ingest");
+    let target = actor::Actor {
+        host: state.hostname.clone(),
+        kind: actor::ActorKind::IngestRelay,
+    };
+    target.as_activitypub(&state.pub_key)
+        .into_response()
+}
+
 async fn post_tag_relay(
     axum::extract::State(state): axum::extract::State<State>,
     Path(tag): Path<String>,
@@ -137,6 +154,17 @@ async fn post_instance_relay(
     let target = actor::Actor {
         host: state.hostname.clone(),
         kind: actor::ActorKind::InstanceRelay(instance.to_lowercase()),
+    };
+    post_relay(state, endpoint, target).await
+}
+
+async fn post_ingest_relay(
+    axum::extract::State(state): axum::extract::State<State>,
+    endpoint: endpoint::Endpoint<'_>
+) -> Response{
+    let target = actor::Actor {
+        host: state.hostname.clone(),
+        kind: actor::ActorKind::IngestRelay,
     };
     post_relay(state, endpoint, target).await
 }
@@ -237,6 +265,23 @@ async fn post_relay(
             Err(e) => {
                 tracing::error!("del_follow: {}", e);
                 track_request("POST", "relay", "unfollow_error");
+                (StatusCode::INTERNAL_SERVER_ERROR,
+                 format!("{}", e)
+                 ).into_response()
+            }
+        }
+    } else if let actor::ActorKind::IngestRelay = target.kind {
+        match state.ingest_tx.send(endpoint.payload.to_string()).await {
+            Ok(()) => {
+                track_request("POST", "relay", "ingest");
+                (StatusCode::ACCEPTED,
+                 [("content-type", "application/activity+json")],
+                 "{}"
+                ).into_response()
+            },
+            Err(e) => {
+                tracing::error!("ingest_tx.send: {}", e);
+                track_request("POST", "relay", "ingest");
                 (StatusCode::INTERNAL_SERVER_ERROR,
                  format!("{}", e)
                  ).into_response()
@@ -345,13 +390,16 @@ async fn main() {
             .unwrap()
     );
     let hostname = Arc::new(config.hostname.clone());
-    relay::spawn(client.clone(), hostname.clone(), database.clone(), priv_key.clone(), stream_rx);
+    let (ingest_tx, ingest_rx) = channel::<String>(1024);
+    relay::spawn(client.clone(), hostname.clone(), database.clone(), priv_key.clone(), stream_rx, ingest_rx);
 
     let app = Router::new()
         .route("/tag/:tag", get(get_tag_actor).post(post_tag_relay))
         .route("/instance/:instance", get(get_instance_actor).post(post_instance_relay))
+        .route("/ingest", get(get_ingest_actor).post(post_ingest_relay))
         .route("/tag/:tag/outbox", get(outbox))
         .route("/instance/:instance/outbox", get(outbox))
+        .route("/ingest/outbox", get(outbox))
         .route("/.well-known/webfinger", get(webfinger))
         .route("/.well-known/nodeinfo", get(nodeinfo))
         .route("/metrics", get(|| async move {
@@ -363,6 +411,7 @@ async fn main() {
             hostname,
             priv_key,
             pub_key,
+            ingest_tx
         })
         .merge(SpaRouter::new("/", "static"));
 
