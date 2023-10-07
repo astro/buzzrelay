@@ -1,3 +1,4 @@
+use std::time::SystemTime;
 use http::StatusCode;
 use serde::de::DeserializeOwned;
 use sigh::{PrivateKey, SigningConfig, alg::RsaSha256};
@@ -21,8 +22,7 @@ where
         .uri(uri)
         .header("host", &host)
         .header("content-type", "application/activity+json")
-        .header("date", chrono::Utc::now().to_rfc2822()
-            .replace("+0000", "GMT"))
+        .header("date", httpdate::fmt_http_date(SystemTime::now()))
         .header("accept", "application/activity+json")
         .header("digest", digest_header)
         .body(vec![])?;

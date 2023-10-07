@@ -1,6 +1,6 @@
 use std::{
     sync::Arc,
-    time::Instant,
+    time::{Instant, SystemTime},
 };
 use http::StatusCode;
 use metrics::histogram;
@@ -39,8 +39,7 @@ pub async fn send_raw(
         .uri(uri)
         .header("host", &host)
         .header("content-type", "application/activity+json")
-        .header("date", chrono::Utc::now().to_rfc2822()
-            .replace("+0000", "GMT"))
+        .header("date", httpdate::fmt_http_date(SystemTime::now()))
         .header("digest", digest_header)
         .body(body.as_ref().clone())
         .map_err(Error::HttpReq)?;

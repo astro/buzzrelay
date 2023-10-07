@@ -283,6 +283,7 @@ dependencies = [
  "futures",
  "http",
  "http_digest_headers",
+ "httpdate",
  "metrics",
  "metrics-exporter-prometheus",
  "metrics-util",
