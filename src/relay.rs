@@ -6,6 +6,7 @@ use serde_json::json;
 use sigh::PrivateKey;
 use tokio::{
     sync::mpsc::Receiver,
+    select,
 };
 use crate::{db::Database, send, actor};
 
@@ -39,7 +40,7 @@ impl Post<'_> {
     fn relay_target_kinds(&self) -> impl Iterator<Item = actor::ActorKind> {
         self.host()
             .into_iter()
-            .map(actor::ActorKind::InstanceRelay)
+            .map(actor::ActorKind::Instance)
             .chain(
                 self.tags()
                     .into_iter()
@@ -147,14 +148,18 @@ pub fn spawn(
     hostname: Arc<String>,
     database: Database,
     private_key: PrivateKey,
-    mut stream_rx: Receiver<String>
+    mut stream_rx: Receiver<String>,
+    mut ingest_rx: Receiver<String>,
 ) {
     let private_key = Arc::new(private_key);
 
     tokio::spawn(async move {
         let mut workers = HashMap::new();
 
-        while let Some(data) = stream_rx.recv().await {
+        while let Some(data) = select!{
+            data = stream_rx.recv() => data,
+            data = ingest_rx.recv() => data,
+        } {
             let t1 = Instant::now();
             let post: Post = match serde_json::from_str(&data) {
                 Ok(post) => post,
@@ -254,8 +259,8 @@ mod test {
             }]),
         };
         let mut kinds = post.relay_target_kinds();
-        assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
-        assert_eq!(kinds.next(), Some(ActorKind::TagRelay("foo".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::Instance("example.com".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::Tag("foo".to_string())));
         assert_eq!(kinds.next(), None);
     }
 
@@ -269,7 +274,7 @@ mod test {
             }]),
         };
         let mut kinds = post.relay_target_kinds();
-        assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::Instance("example.com".to_string())));
         assert_eq!(kinds.next(), None);
     }
 
@@ -283,8 +288,8 @@ mod test {
             }]),
         };
         let mut kinds = post.relay_target_kinds();
-        assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
-        assert_eq!(kinds.next(), Some(ActorKind::TagRelay("23".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::Instance("example.com".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::Tag("23".to_string())));
         assert_eq!(kinds.next(), None);
     }
 
@@ -298,9 +303,9 @@ mod test {
             }]),
         };
         let mut kinds = post.relay_target_kinds();
-        assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
-        assert_eq!(kinds.next(), Some(ActorKind::TagRelay("dd1302".to_string())));
-        assert_eq!(kinds.next(), Some(ActorKind::TagRelay("dd".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::Instance("example.com".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::Tag("dd1302".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::Tag("dd".to_string())));
         assert_eq!(kinds.next(), None);
     }
 
@@ -314,8 +319,8 @@ mod test {
             }]),
         };
         let mut kinds = post.relay_target_kinds();
-        assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
-        assert_eq!(kinds.next(), Some(ActorKind::TagRelay("sukoteitusiyuhuorudoronguhea".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::Instance("example.com".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::Tag("sukoteitusiyuhuorudoronguhea".to_string())));
         assert_eq!(kinds.next(), None);
     }
 }

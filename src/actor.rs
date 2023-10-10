@@ -6,8 +6,9 @@ use crate::activitypub;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ActorKind {
-    TagRelay(String),
-    InstanceRelay(String),
+    Tag(String),
+    Instance(String),
+    Ingest,
 }
 
 impl ActorKind {
@@ -15,7 +16,7 @@ impl ActorKind {
         let tag = deunicode(tag)
             .to_lowercase()
             .replace(char::is_whitespace, "");
-        ActorKind::TagRelay(tag)
+        ActorKind::Tag(tag)
     }
 }
 
@@ -28,10 +29,11 @@ pub struct Actor {
 impl Actor {
     pub fn uri(&self) -> String {
         match &self.kind {
-            ActorKind::TagRelay(tag) =>
+            ActorKind::Tag(tag) =>
                 format!("https://{}/tag/{}", self.host, tag),
-            ActorKind::InstanceRelay(instance) =>
+            ActorKind::Instance(instance) =>
                 format!("https://{}/instance/{}", self.host, instance),
+            ActorKind::Ingest => format!("https://{}/ingest", self.host),
         }
     }
 
@@ -45,10 +47,12 @@ impl Actor {
             actor_type: "Service".to_string(),
             id: self.uri(),
             name: Some(match &self.kind {
-                ActorKind::TagRelay(tag) =>
+                ActorKind::Tag(tag) =>
                     format!("#{}", tag),
-                ActorKind::InstanceRelay(instance) =>
+                ActorKind::Instance(instance) =>
                     instance.to_string(),
+                ActorKind::Ingest =>
+                    self.host.to_string()
             }),
             icon: Some(activitypub::Media {
                 media_type: "Image".to_string(),
@@ -63,10 +67,12 @@ impl Actor {
                 pem: pub_key.to_pem().unwrap(),
             },
             preferred_username: Some(match &self.kind {
-                ActorKind::TagRelay(tag) =>
+                ActorKind::Tag(tag) =>
                     format!("tag-{}", tag),
-                ActorKind::InstanceRelay(instance) =>
+                ActorKind::Instance(instance) =>
                     format!("instance-{}", instance),
+                ActorKind::Ingest =>
+                    String::from(env!("CARGO_PKG_NAME")),
             }),
         }
     }
