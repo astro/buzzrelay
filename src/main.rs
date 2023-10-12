@@ -143,6 +143,18 @@ async fn post_relay(
             ).into_response();
         }
     };
+
+    if let Some((redis, in_topic)) = &state.redis {
+        if let Ok(data) = serde_json::to_vec(&endpoint.payload) {
+            if let Err(e) = redis::Cmd::publish(in_topic.as_ref(), data)
+                .query_async::<_, redis::Value>(&mut redis.clone())
+                .await
+            {
+                tracing::error!("redis publish: {}", e);
+            }
+        }
+    }
+
     let action = match serde_json::from_value::<activitypub::Action<serde_json::Value>>(endpoint.payload.clone()) {
         Ok(action) => action,
         Err(e) => {
@@ -229,29 +241,12 @@ async fn post_relay(
                  ).into_response()
             }
         }
-    } else if action.action_type == "Create" || action.action_type == "Announce" {
-        tracing::trace!("Received on {} from {}: {} {:?}", target.uri(), endpoint.remote_actor_uri, action.action_type, action.object);
-        if let Some((redis, in_topic)) = &state.redis {
-            if let Some(data) = &action.object
-                .and_then(|o| serde_json::to_vec(&o).ok())
-            {
-                if let Err(e) = redis::Cmd::publish(in_topic.as_ref(), data)
-                    .query_async::<_, redis::Value>(&mut redis.clone())
-                    .await
-                {
-                    tracing::error!("redis publish: {}", e);
-                }
-            }
-        }
-
+    } else {
+        track_request("POST", "relay", "unrecognized");
         (StatusCode::ACCEPTED,
          [("content-type", "application/activity+json")],
          "{}"
         ).into_response()
-    } else {
-        tracing::error!("Unrecognized action type {:?}", action.action_type);
-        track_request("POST", "relay", "unrecognized");
-        (StatusCode::BAD_REQUEST, "Not a recognized request").into_response()
     }
 }
 
