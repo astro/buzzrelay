@@ -12,6 +12,7 @@ use serde_json::json;
 use std::{net::SocketAddr, sync::Arc, time::Duration, collections::HashMap};
 use std::{panic, process};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use reqwest::Url;
 
 mod error;
 mod config;
@@ -334,7 +335,12 @@ async fn main() {
     let database = db::Database::connect(&config.db).await;
     let mut redis = None;
     if let Some(redis_config) = config.redis.clone() {
-        let client = redis::Client::open(redis_config.connection)
+        let mut redis_url = Url::parse(&redis_config.connection)
+            .expect("redis.connection");
+        let redis_password = std::fs::read_to_string(redis_config.password_file)
+            .expect("redis.password_file");
+        redis_url.set_password(Some(&redis_password)).unwrap();
+        let client = redis::Client::open(redis_url)
             .expect("redis::Client");
         let manager = redis::aio::ConnectionManager::new(client)
             .await

@@ -4,6 +4,7 @@ use sigh::{PrivateKey, PublicKey, Key};
 #[derive(Clone, Deserialize)]
 pub struct RedisConfig {
     pub connection: String,
+    pub password_file: String,
     pub in_topic: String,
 }
 

@@ -21,4 +21,5 @@ db: "host=localhost user=relay password=xyz dbname=buzzrelay"
 # Optional Redis
 redis:
   connection: "redis://127.0.0.1:6378/"
+  password_file: "redis_password.txt"
   in_topic: "relay-in"
