@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use sigh::{PrivateKey, PublicKey, Key};
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 pub struct Config {
     pub streams: Vec<String>,
     pub db: String,

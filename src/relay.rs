@@ -7,7 +7,7 @@ use sigh::PrivateKey;
 use tokio::{
     sync::mpsc::Receiver,
 };
-use crate::{db::Database, send, actor};
+use crate::{send, actor, state::State};
 
 #[derive(Deserialize)]
 struct Post<'a> {
@@ -143,14 +143,9 @@ fn spawn_worker(client: Arc<reqwest::Client>) -> Sender<Job> {
 }
 
 pub fn spawn(
-    client: Arc<reqwest::Client>,
-    hostname: Arc<String>,
-    database: Database,
-    private_key: PrivateKey,
+    state: State,
     mut stream_rx: Receiver<String>
 ) {
-    let private_key = Arc::new(private_key);
-
     tokio::spawn(async move {
         let mut workers = HashMap::new();
 
@@ -175,13 +170,13 @@ pub fn spawn(
             let mut seen_actors = HashSet::new();
             let mut seen_inboxes = HashSet::new();
             let published = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
-            for actor in post.relay_targets(hostname.clone()) {
+            for actor in post.relay_targets(state.hostname.clone()) {
                 if seen_actors.contains(&actor) {
                     continue;
                 }
 
                 let actor_id = Arc::new(actor.uri());
-                let announce_id = format!("https://{}/announce/{}", hostname, urlencoding::encode(&post_url));
+                let announce_id = format!("https://{}/announce/{}", state.hostname, urlencoding::encode(&post_url));
                 let body = json!({
                     "@context": "https://www.w3.org/ns/activitystreams",
                     "type": "Announce",
@@ -196,7 +191,7 @@ pub fn spawn(
                     serde_json::to_vec(&body)
                         .unwrap()
                 );
-                for inbox in database.get_following_inboxes(&actor_id).await.unwrap() {
+                for inbox in state.database.get_following_inboxes(&actor_id).await.unwrap() {
                     let Ok(inbox_url) = reqwest::Url::parse(&inbox) else { continue; };
 
                     // Avoid duplicate processing.
@@ -212,14 +207,14 @@ pub fn spawn(
 
                     // Lookup/create worker queue per inbox.
                     let tx = workers.entry(inbox_url.host_str().unwrap_or("").to_string())
-                        .or_insert_with(|| spawn_worker(client.clone()));
+                        .or_insert_with(|| spawn_worker(state.client.clone()));
                     // Create queue item.
                     let job = Job {
                         post_url: post_url.clone(),
                         actor_id: actor_id.clone(),
                         body: body.clone(),
                         key_id: actor.key_id(),
-                        private_key: private_key.clone(),
+                        private_key: state.priv_key.clone(),
                         inbox_url,
                     };
                     // Enqueue job for worker.

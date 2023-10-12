@@ -1,5 +1,5 @@
 use axum::{
-    extract::{FromRef, Path, Query},
+    extract::{Path, Query},
     http::StatusCode,
     response::{IntoResponse, Response},
     routing::get, Json, Router,
@@ -9,13 +9,13 @@ use metrics::increment_counter;
 use metrics_util::MetricKindMask;
 use metrics_exporter_prometheus::PrometheusBuilder;
 use serde_json::json;
-use sigh::{PrivateKey, PublicKey};
 use std::{net::SocketAddr, sync::Arc, time::Duration, collections::HashMap};
 use std::{panic, process};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod error;
 mod config;
+mod state;
 mod actor;
 mod db;
 mod digest;
@@ -26,22 +26,8 @@ mod relay;
 mod activitypub;
 mod endpoint;
 
+use state::State;
 
-#[derive(Clone)]
-struct State {
-    database: db::Database,
-    client: Arc<reqwest::Client>,
-    hostname: Arc<String>,
-    priv_key: PrivateKey,
-    pub_key: PublicKey,
-}
-
-
-impl FromRef<State> for Arc<reqwest::Client> {
-    fn from_ref(state: &State) -> Arc<reqwest::Client> {
-        state.client.clone()
-    }
-}
 
 fn track_request(method: &'static str, controller: &'static str, result: &'static str) {
     increment_counter!("api_http_requests_total", "controller" => controller, "method" => method, "result" => result);
@@ -315,37 +301,33 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let config = config::Config::load(
-        &std::env::args().nth(1)
-            .expect("Call with config.yaml")
-    );
-    let priv_key = config.priv_key();
-    let pub_key = config.pub_key();
-
     let recorder = PrometheusBuilder::new()
         .add_global_label("application", env!("CARGO_PKG_NAME"))
         .idle_timeout(MetricKindMask::ALL, Some(Duration::from_secs(600)))
         .install_recorder()
         .unwrap();
 
+    let config = config::Config::load(
+        &std::env::args().nth(1)
+            .expect("Call with config.yaml")
+    );
     let database = db::Database::connect(&config.db).await;
 
-    let stream_rx = stream::spawn(config.streams.into_iter());
-    let client = Arc::new(
-        reqwest::Client::builder()
-            .timeout(Duration::from_secs(5))
-            .user_agent(concat!(
-                env!("CARGO_PKG_NAME"),
-                "/",
-                env!("CARGO_PKG_VERSION"),
-            ))
-            .pool_max_idle_per_host(1)
-            .pool_idle_timeout(Some(Duration::from_secs(5)))
-            .build()
-            .unwrap()
-    );
-    let hostname = Arc::new(config.hostname.clone());
-    relay::spawn(client.clone(), hostname.clone(), database.clone(), priv_key.clone(), stream_rx);
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(5))
+        .user_agent(concat!(
+            env!("CARGO_PKG_NAME"),
+            "/",
+            env!("CARGO_PKG_VERSION"),
+        ))
+        .pool_max_idle_per_host(1)
+        .pool_idle_timeout(Some(Duration::from_secs(5)))
+        .build()
+        .unwrap();
+    let state = State::new(config.clone(), database, client);
+
+    let stream_rx = stream::spawn(config.streams.clone().into_iter());
+    relay::spawn(state.clone(), stream_rx);
 
     let app = Router::new()
         .route("/tag/:tag", get(get_tag_actor).post(post_tag_relay))
@@ -357,13 +339,7 @@ async fn main() {
         .route("/metrics", get(|| async move {
             recorder.render().into_response()
         }))
-        .with_state(State {
-            database,
-            client,
-            hostname,
-            priv_key,
-            pub_key,
-        })
+        .with_state(state)
         .merge(SpaRouter::new("/", "static"));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], config.listen_port));
