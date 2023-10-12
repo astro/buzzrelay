@@ -37,6 +37,21 @@
       type = types.enum [ "ERROR" "WARN" "INFO" "DEBUG" "TRACE" ];
       default = "INFO";
     };
+
+    redis = {
+      connection = mkOption {
+        type = with types; nullOr str;
+        default = null;
+      };
+      passwordFile = mkOption {
+        type = with types; nullOr path;
+        default = null;
+      };
+      in_topic = mkOption {
+        type = with types; nullOr str;
+        default = null;
+      };
+    };
   };
 
   config =
@@ -50,6 +65,9 @@
           priv_key_file = cfg.privKeyFile;
           pub_key_file = cfg.pubKeyFile;
           db = "host=/var/run/postgresql user=${cfg.user} dbname=${cfg.database}";
+          redis = if cfg.redis.connection != null
+                  then cfg.redis
+                  else null;
         });
       inherit (self.packages.${pkgs.system}) buzzrelay;
     in
