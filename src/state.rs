@@ -8,6 +8,7 @@ use crate::{config::Config, db::Database};
 #[derive(Clone)]
 pub struct State {
     pub database: Database,
+    pub redis: Option<(redis::aio::ConnectionManager, Arc<String>)>,
     pub client: Arc<reqwest::Client>,
     pub hostname: Arc<String>,
     pub priv_key: Arc<PrivateKey>,
@@ -22,11 +23,12 @@ impl FromRef<State> for Arc<reqwest::Client> {
 }
 
 impl State {
-    pub fn new(config: Config, database: Database, client: reqwest::Client) -> Self {
+    pub fn new(config: Config, database: Database, redis: Option<(redis::aio::ConnectionManager, String)>, client: reqwest::Client) -> Self {
         let priv_key = Arc::new(config.priv_key());
         let pub_key = Arc::new(config.pub_key());
         State {
             database,
+            redis: redis.map(|(connection, in_topic)| (connection, Arc::new(in_topic))),
             client: Arc::new(client),
             hostname: Arc::new(config.hostname),
             priv_key,

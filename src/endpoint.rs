@@ -25,7 +25,7 @@ const SIGNATURE_HEADERS_REQUIRED: &[&str] = &[
 pub struct Endpoint<'a> {
     pub payload: serde_json::Value,
     signature: Signature<'a>,
-    remote_actor_uri: String,
+    pub remote_actor_uri: String,
 }
 
 #[async_trait]

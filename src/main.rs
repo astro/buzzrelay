@@ -152,7 +152,7 @@ async fn post_relay(
             ).into_response();
         }
     };
-    let object_type = action.object
+    let object_type = action.object.as_ref()
         .and_then(|object| object.get("type").cloned())
         .and_then(|object_type| object_type.as_str().map(std::string::ToString::to_string));
 
@@ -228,7 +228,27 @@ async fn post_relay(
                  ).into_response()
             }
         }
+    } else if action.action_type == "Create" || action.action_type == "Announce" {
+        tracing::trace!("Received on {} from {}: {} {:?}", target.uri(), endpoint.remote_actor_uri, action.action_type, action.object);
+        if let Some((redis, in_topic)) = &state.redis {
+            if let Some(data) = &action.object
+                .and_then(|o| serde_json::to_vec(&o).ok())
+            {
+                if let Err(e) = redis::Cmd::publish(in_topic.as_ref(), data)
+                    .query_async::<_, redis::Value>(&mut redis.clone())
+                    .await
+                {
+                    tracing::error!("redis publish: {}", e);
+                }
+            }
+        }
+
+        (StatusCode::ACCEPTED,
+         [("content-type", "application/activity+json")],
+         "{}"
+        ).into_response()
     } else {
+        tracing::error!("Unrecognized action type {:?}", action.action_type);
         track_request("POST", "relay", "unrecognized");
         (StatusCode::BAD_REQUEST, "Not a recognized request").into_response()
     }
@@ -312,7 +332,15 @@ async fn main() {
             .expect("Call with config.yaml")
     );
     let database = db::Database::connect(&config.db).await;
-
+    let mut redis = None;
+    if let Some(redis_config) = config.redis.clone() {
+        let client = redis::Client::open(redis_config.connection)
+            .expect("redis::Client");
+        let manager = redis::aio::ConnectionManager::new(client)
+            .await
+            .expect("redis::Client");
+        redis = Some((manager, redis_config.in_topic));
+    }
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(5))
         .user_agent(concat!(
@@ -324,7 +352,7 @@ async fn main() {
         .pool_idle_timeout(Some(Duration::from_secs(5)))
         .build()
         .unwrap();
-    let state = State::new(config.clone(), database, client);
+    let state = State::new(config.clone(), database, redis, client);
 
     let stream_rx = stream::spawn(config.streams.clone().into_iter());
     relay::spawn(state.clone(), stream_rx);

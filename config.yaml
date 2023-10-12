@@ -18,3 +18,7 @@ priv_key_file: private-key.pem
 pub_key_file: public-key.pem
 # PostgreSQL
 db: "host=localhost user=relay password=xyz dbname=buzzrelay"
+# Optional Redis
+redis:
+  connection: "redis://127.0.0.1:6378/"
+  in_topic: "relay-in"

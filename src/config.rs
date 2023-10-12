@@ -2,11 +2,18 @@ use serde::Deserialize;
 use sigh::{PrivateKey, PublicKey, Key};
 
 #[derive(Clone, Deserialize)]
+pub struct RedisConfig {
+    pub connection: String,
+    pub in_topic: String,
+}
+
+#[derive(Clone, Deserialize)]
 pub struct Config {
     pub streams: Vec<String>,
     pub db: String,
     pub hostname: String,
     pub listen_port: u16,
+    pub redis: Option<RedisConfig>,
     priv_key_file: String,
     pub_key_file: String,
 }
