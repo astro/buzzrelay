@@ -47,9 +47,9 @@
         type = with types; nullOr path;
         default = null;
       };
-      in_topic = mkOption {
-        type = with types; nullOr str;
-        default = null;
+      inTopic = mkOption {
+        type = types.str;
+        default = "relay-in";
       };
     };
   };
@@ -66,7 +66,11 @@
           pub_key_file = cfg.pubKeyFile;
           db = "host=/var/run/postgresql user=${cfg.user} dbname=${cfg.database}";
           redis = if cfg.redis.connection != null
-                  then cfg.redis
+                  then {
+                    connection = cfg.redis.connection;
+                    password_file = cfg.redis.passwordFile;
+                    in_topic = cfg.redis.inTopic;
+                  }
                   else null;
         });
       inherit (self.packages.${pkgs.system}) buzzrelay;
