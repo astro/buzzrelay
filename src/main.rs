@@ -344,10 +344,11 @@ async fn main() {
     }
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(5))
-        .user_agent(concat!(
+        .user_agent(format!(
+            "{}/{} (+https://{})",
             env!("CARGO_PKG_NAME"),
-            "/",
             env!("CARGO_PKG_VERSION"),
+            config.hostname,
         ))
         .pool_max_idle_per_host(1)
         .pool_idle_timeout(Some(Duration::from_secs(5)))
