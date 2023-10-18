@@ -285,9 +285,9 @@ async fn nodeinfo(axum::extract::State(state): axum::extract::State<State>) -> R
         "openRegistrations": false,
         "usage": {
             "users": {
-                "total": followers_count,
+                "total": 0,
                 "activeHalfyear": followers_count,
-                "activeMonth": followers_count,
+                "activeMonth": 0,
             },
             "localPosts": follows_count,
             "localComments": 0
