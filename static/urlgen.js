@@ -7,7 +7,7 @@
                 var value = encodeURIComponent(inputEl.value.replace(/^#/, ""));
                 preEl.innerText = value ?
                     "https://" + document.location.host + "/" + id + "/" + value :
-                    "";
+                    "\n";
             }, 10);
         }
         inputEl.addEventListener('change', onChange);
