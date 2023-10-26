@@ -12,19 +12,39 @@ a {
 }
 h1 {
     text-align: center;
-    font-size: 300%;
+    font-size: 600%;
+    text-shadow: 0 0.2rem 0.2rem #9FAFBF;
+    letter-spacing: 0.1rem;
+    margin: 1rem 0 0;
+}
+header p {
+    margin: 0 auto 1rem;
+    text-align: center;
+    font-style: italic;
 }
 h2 {
+    margin: 3rem auto 1rem;
+    max-width: 38rem;
 }
-p, ol {
+p, ol, pre {
     margin: 2rem auto;
     max-width: 30rem;
     padding: 0;
     line-height: 2em;
 }
-li {
+ol > li {
+    position: relative;
     margin: 0.5rem;
     padding: 0;
+}
+ol > li > code {
+    padding-left: 2rem;
+    color: #888;
+    position: absolute;
+    right: 0;
+}
+ol > li > code::before {
+    content: "https://…";
 }
 
 .boxes {
@@ -41,9 +61,13 @@ li {
     min-width: 25rem;
 }
 .boxes article pre {
-    margin: 1rem 0;
+    margin: 1rem auto;
     padding: 0.5rem;
     background-color: #DFCFEF;
+}
+
+.faq {
+    margin: 4rem;
 }
 
 footer {

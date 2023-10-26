@@ -27,15 +27,16 @@
       </p>
       <p>
         With this service <a href="https://fedi.buzz/">#FediBuzz</a>
-        provides relay endpoints for you to customize. In Mastodon's
-        <b>preferences</b> go to:
+        provides relay endpoints for you to customize.
       </p>
       <ol>
-        <li>Administration</li>
-        <li>Relay</li>
-        <li>Click the button to setup a new relay</li>
+        <li>In Mastodon: click <b>Preferences</b> in the navigation sidebar</li>
+        <li>Navigate to <b>Administration</b></li>
+        <li>Navigate to <b>Relays</b> <code>/admin/relays</code></li>
+        <li>Click the <b>Add new relay</b> button <code>/admin/relays/new</code></li>
         <li>Generate a relay address below</li>
         <li>Copy &amp; paste into Mastodon's preferences</li>
+        <li>Hit the <b>Save and enable</b> button</li>
       </ol>
     </section>
 
@@ -61,6 +62,39 @@
         <pre id="instance-url">
         </pre>
       </article>
+    </section>
+
+    <section class="faq">
+      <h2>Can I follow all my city's hashtags for all dates in the year?</h2>
+      <p>
+        Putting dates in hashtags is popular. We are aware, and our
+        solution is very simple: posts with hashtags that end in
+        digits are additionally delivered to all followers that follow
+        the hashtag without the trailing digits.
+      </p>
+      <p>
+        That means, if you follow <code>#dd</code> on this relay,
+        you'll also get <code>#dd1302</code>, <code>#dd1402</code>,
+        <code>#dd1502</code>, and many more!
+      </p>
+
+      <h2>Will this service get me undesirable content?</h2>
+      <p>
+        To steer free of the worst, #FediBuzz ignores anyone from
+        instances that appear in
+        the <a href="https://github.com/gardenfence/blocklist">Garden
+        Fence blocklist</a>, which we pull regularly. However, because
+        we relay links to content in real-time, this service will
+        never do any manual filtering itself.
+      </p>
+
+      <h2>Is it cool to follow a few thousand tags/instances to build my own firehose?</h2>
+      <p>
+        Please don't, it's inefficient. Take a look at #FediBuzz'
+        <a href="https://docs.joinmastodon.org/methods/streaming/#public">federated
+        timeline API</a> instead:
+      </p>
+      <pre>https://fedi.buzz/api/v1/streaming/public</pre>
     </section>
 
     <footer>
