@@ -12,7 +12,7 @@ axum-extra = { version = "0.4", features = ["spa"] }
 tokio = { version = "1", features = ["full", "time"] }
 tracing = "*"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-serde = "1"
+serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0.9"
 reqwest = { version = "0.11", features = ["json", "stream"] }
