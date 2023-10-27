@@ -9,7 +9,6 @@ homepage = "https://relay.fedi.buzz"
 axum = "0.6"
 axum-macros = "0.3"
 axum-extra = { version = "0.4", features = ["spa"] }
-askama = "0.11"
 tokio = { version = "1", features = ["full", "time"] }
 tracing = "*"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
