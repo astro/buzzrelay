@@ -133,7 +133,7 @@ async fn post_relay(
     endpoint: endpoint::Endpoint<'_>,
     target: actor::Actor
 ) -> Response {
-    let remote_actor = match endpoint.remote_actor(&state.client, &target.key_id(), &state.priv_key).await {
+    let remote_actor = match endpoint.remote_actor(&state.client, &state.actor_cache, target.key_id(), state.priv_key.clone()).await {
         Ok(remote_actor) => remote_actor,
         Err(e) => {
             track_request("POST", "relay", "bad_actor");

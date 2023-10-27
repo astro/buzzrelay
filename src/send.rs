@@ -16,8 +16,7 @@ pub async fn send<T: Serialize>(
     body: &T,
 ) -> Result<(), Error> {
     let body = Arc::new(
-        serde_json::to_vec(body)
-            .map_err(Error::Json)?
+        serde_json::to_vec(body)?
     );
     send_raw(client, uri, key_id, private_key, body).await
 }
@@ -41,8 +40,7 @@ pub async fn send_raw(
         .header("content-type", "application/activity+json")
         .header("date", httpdate::fmt_http_date(SystemTime::now()))
         .header("digest", digest_header)
-        .body(body.as_ref().clone())
-        .map_err(Error::HttpReq)?;
+        .body(body.as_ref().clone())?;
     let t1 = Instant::now();
     SigningConfig::new(RsaSha256, private_key, key_id)
         .sign(&mut req)?;
