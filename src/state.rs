@@ -3,7 +3,7 @@ use axum::{
 };
 use sigh::{PrivateKey, PublicKey};
 use std::sync::Arc;
-use crate::{config::Config, db::Database, endpoint::ActorCache};
+use crate::{config::Config, db::Database, actor_cache::ActorCache};
 
 #[derive(Clone)]
 pub struct State {

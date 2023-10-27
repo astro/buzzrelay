@@ -25,6 +25,7 @@ mod send;
 mod stream;
 mod relay;
 mod activitypub;
+mod actor_cache;
 mod endpoint;
 
 use state::State;
