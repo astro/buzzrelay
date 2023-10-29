@@ -11,7 +11,7 @@ pub struct Actor {
     pub name: Option<String>,
     pub icon: Option<Media>,
     pub inbox: String,
-    pub outbox: String,
+    pub outbox: Option<String>,
     #[serde(rename = "publicKey")]
     pub public_key: ActorPublicKey,
     #[serde(rename = "preferredUsername")]
@@ -49,8 +49,8 @@ impl IntoResponse for Actor {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Media {
     #[serde(rename = "type")]
-    pub media_type: String,
+    pub media_type: Option<String>,
     #[serde(rename = "mediaType")]
-    pub content_type: String,
+    pub content_type: Option<String>,
     pub url: String,
 }

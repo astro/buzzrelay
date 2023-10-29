@@ -51,12 +51,12 @@ impl Actor {
                     instance.to_string(),
             }),
             icon: Some(activitypub::Media {
-                media_type: "Image".to_string(),
-                content_type: "image/jpeg".to_string(),
+                media_type: Some("Image".to_string()),
+                content_type: Some("image/jpeg".to_string()),
                 url: "https://fedi.buzz/assets/favicon48.png".to_string(),
             }),
             inbox: self.uri(),
-            outbox: format!("{}/outbox", self.uri()),
+            outbox: Some(format!("{}/outbox", self.uri())),
             public_key: activitypub::ActorPublicKey {
                 id: self.key_id(),
                 owner: Some(self.uri()),
