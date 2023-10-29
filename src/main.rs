@@ -138,6 +138,7 @@ async fn post_relay(
         Ok(remote_actor) => remote_actor,
         Err(e) => {
             track_request("POST", "relay", "bad_actor");
+            tracing::error!("post_relay bad actor: {e:?}");
             return (
                 StatusCode::BAD_REQUEST,
                 format!("Bad actor: {:?}", e)
@@ -160,6 +161,7 @@ async fn post_relay(
         Ok(action) => action,
         Err(e) => {
             track_request("POST", "relay", "bad_action");
+            tracing::error!("post_relay bad action: {e:?}");
             return (
                 StatusCode::BAD_REQUEST,
                 format!("Bad action: {:?}", e)

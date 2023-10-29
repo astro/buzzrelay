@@ -9,7 +9,7 @@ pub enum Error {
     #[error("Signature error")]
     Signature(#[from] Arc<sigh::Error>),
     #[error("Signature verification failure")]
-    SignatureFail,
+    SignatureFail(String),
     #[error("HTTP request error")]
     HttpReq(#[from] Arc<http::Error>),
     #[error("HTTP client error")]
