@@ -12,10 +12,17 @@ pub struct Actor {
     pub icon: Option<Media>,
     pub inbox: String,
     pub outbox: Option<String>,
+    pub endpoints: Option<ActorEndpoints>,
     #[serde(rename = "publicKey")]
     pub public_key: ActorPublicKey,
     #[serde(rename = "preferredUsername")]
     pub preferred_username: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ActorEndpoints {
+    #[serde(rename = "sharedInbox")]
+    pub shared_inbox: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
