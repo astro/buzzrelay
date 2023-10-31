@@ -26,6 +26,30 @@ pub struct Actor {
 }
 
 impl Actor {
+    pub fn from_uri(mut uri: &str) -> Option<Self> {
+        if ! uri.starts_with("https://") {
+            return None;
+        }
+        uri = &uri[8..];
+
+        let parts = uri.split("/").collect::<Vec<_>>();
+        if parts.len() != 3 {
+            return None;
+        }
+
+        let Ok(topic) = urlencoding::decode(parts[2]) else { return None; };
+        let kind = match parts[1] {
+            "tag" =>
+                ActorKind::TagRelay(topic.to_string()),
+            "instance" =>
+                ActorKind::InstanceRelay(topic.to_string()),
+            _ =>
+                return None,
+        };
+        let host = Arc::new(parts[0].to_string());
+        Some(Actor { host, kind })
+    }
+
     pub fn uri(&self) -> String {
         match &self.kind {
             ActorKind::TagRelay(tag) =>

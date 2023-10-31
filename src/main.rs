@@ -28,6 +28,7 @@ mod activitypub;
 mod actor_cache;
 mod endpoint;
 
+use actor::Actor;
 use state::State;
 
 
@@ -46,26 +47,33 @@ async fn webfinger(
             return StatusCode::NOT_FOUND.into_response();
         },
     };
-    let (target_kind, target_host) =
-        if resource.starts_with("acct:tag-") {
-            let off = "acct:tag-".len();
-            let at = resource.find('@');
-            (actor::ActorKind::TagRelay(resource[off..at.unwrap_or(resource.len())].to_string()),
-             at.map_or_else(|| state.hostname.clone(), |at| Arc::new(resource[at + 1..].to_string())))
-        } else if resource.starts_with("acct:instance-") {
-            let off = "acct:instance-".len();
-            let at = resource.find('@');
-            (actor::ActorKind::InstanceRelay(resource[off..at.unwrap_or(resource.len())].to_string()),
-             at.map_or_else(|| state.hostname.clone(), |at| Arc::new(resource[at + 1..].to_string())))
-        } else {
-            track_request("GET", "webfinger", "not_found");
-            return StatusCode::NOT_FOUND.into_response();
-        };
-    track_request("GET", "webfinger", "found");
-    let target = actor::Actor {
-        host: target_host,
-        kind: target_kind,
+    let target = if resource.starts_with("acct:") {
+        let (target_kind, target_host) =
+            if resource.starts_with("acct:tag-") {
+                let off = "acct:tag-".len();
+                let at = resource.find('@');
+                (actor::ActorKind::TagRelay(resource[off..at.unwrap_or(resource.len())].to_string()),
+                 at.map_or_else(|| state.hostname.clone(), |at| Arc::new(resource[at + 1..].to_string())))
+            } else if resource.starts_with("acct:instance-") {
+                let off = "acct:instance-".len();
+                let at = resource.find('@');
+                (actor::ActorKind::InstanceRelay(resource[off..at.unwrap_or(resource.len())].to_string()),
+                 at.map_or_else(|| state.hostname.clone(), |at| Arc::new(resource[at + 1..].to_string())))
+            } else {
+                track_request("GET", "webfinger", "not_found");
+                return StatusCode::NOT_FOUND.into_response();
+            };
+        actor::Actor {
+            host: target_host,
+            kind: target_kind,
+        }
+    } else if let Some(target) = Actor::from_uri(resource) {
+        target
+    } else {
+        track_request("GET", "webfinger", "not_found");
+        return StatusCode::NOT_FOUND.into_response();
     };
+    track_request("GET", "webfinger", "found");
     Json(json!({
         "subject": &resource,
         "aliases": &[
