@@ -307,6 +307,18 @@ async fn nodeinfo(axum::extract::State(state): axum::extract::State<State>) -> R
     })).into_response()
 }
 
+/// Expected by AodeRelay
+async fn instanceinfo() -> Response {
+    Json(json!({
+        "title": env!("CARGO_PKG_NAME"),
+        "description": "#FediBuzz Relay",
+        "version": env!("CARGO_PKG_VERSION"),
+        "registrations": false,
+        "default_approval": false,
+    })).into_response()
+}
+
+
 #[tokio::main]
 async fn main() {
     exit_on_panic();
@@ -369,6 +381,7 @@ async fn main() {
         .route("/instance/:instance/outbox", get(outbox))
         .route("/.well-known/webfinger", get(webfinger))
         .route("/.well-known/nodeinfo", get(nodeinfo))
+        .route("/api/v1/instance", get(instanceinfo))
         .route("/metrics", get(|| async move {
             recorder.render().into_response()
         }))
