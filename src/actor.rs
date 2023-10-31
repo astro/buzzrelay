@@ -27,26 +27,39 @@ pub struct Actor {
 
 impl Actor {
     pub fn from_uri(mut uri: &str) -> Option<Self> {
-        if ! uri.starts_with("https://") {
+        let kind;
+        let host;
+        if uri.starts_with("acct:tag-") {
+            let off = "acct:tag-".len();
+            let Some(at) = uri.find('@') else { return None; };
+            kind = ActorKind::TagRelay(uri[off..at].to_string());
+            host = Arc::new(uri[at + 1..].to_string());
+        } else if uri.starts_with("acct:instance-") {
+            let off = "acct:instance-".len();
+            let Some(at) = uri.find('@') else { return None; };
+            kind = ActorKind::InstanceRelay(uri[off..at].to_string());
+            host = Arc::new(uri[at + 1..].to_string());
+        } else if uri.starts_with("https://") {
+            uri = &uri[8..];
+
+            let parts = uri.split('/').collect::<Vec<_>>();
+            if parts.len() != 3 {
+                return None;
+            }
+
+            let Ok(topic) = urlencoding::decode(parts[2]) else { return None; };
+            kind = match parts[1] {
+                "tag" =>
+                    ActorKind::TagRelay(topic.to_string()),
+                "instance" =>
+                    ActorKind::InstanceRelay(topic.to_string()),
+                _ =>
+                    return None,
+            };
+            host = Arc::new(parts[0].to_string());
+        } else {
             return None;
         }
-        uri = &uri[8..];
-
-        let parts = uri.split("/").collect::<Vec<_>>();
-        if parts.len() != 3 {
-            return None;
-        }
-
-        let Ok(topic) = urlencoding::decode(parts[2]) else { return None; };
-        let kind = match parts[1] {
-            "tag" =>
-                ActorKind::TagRelay(topic.to_string()),
-            "instance" =>
-                ActorKind::InstanceRelay(topic.to_string()),
-            _ =>
-                return None,
-        };
-        let host = Arc::new(parts[0].to_string());
         Some(Actor { host, kind })
     }
 
