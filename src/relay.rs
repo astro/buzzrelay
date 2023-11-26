@@ -4,9 +4,7 @@ use metrics::{increment_counter, histogram};
 use serde::Deserialize;
 use serde_json::json;
 use sigh::PrivateKey;
-use tokio::{
-    sync::mpsc::Receiver,
-};
+use tokio::sync::mpsc::Receiver;
 use crate::{send, actor, state::State};
 
 #[derive(Deserialize)]
@@ -14,6 +12,7 @@ struct Post<'a> {
     pub url: Option<&'a str>,
     pub uri: &'a str,
     pub tags: Option<Vec<Tag<'a>>>,
+    pub language: Option<&'a str>,
 }
 
 impl Post<'_> {
@@ -74,6 +73,10 @@ impl Post<'_> {
                             vec![actor1]
                         }
                     })
+            )
+            .chain(
+                self.language
+                    .and_then(actor::ActorKind::from_language)
             )
     }
 
@@ -247,10 +250,12 @@ mod test {
             tags: Some(vec![Tag {
                 name: "foo",
             }]),
+            language: Some("en"),
         };
         let mut kinds = post.relay_target_kinds();
         assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
         assert_eq!(kinds.next(), Some(ActorKind::TagRelay("foo".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::LanguageRelay("en".to_string())));
         assert_eq!(kinds.next(), None);
     }
 
@@ -262,6 +267,7 @@ mod test {
             tags: Some(vec![Tag {
                 name: "",
             }]),
+            language: None,
         };
         let mut kinds = post.relay_target_kinds();
         assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
@@ -276,6 +282,7 @@ mod test {
             tags: Some(vec![Tag {
                 name: "23",
             }]),
+            language: None,
         };
         let mut kinds = post.relay_target_kinds();
         assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
@@ -291,6 +298,7 @@ mod test {
             tags: Some(vec![Tag {
                 name: "dd1302",
             }]),
+            language: None,
         };
         let mut kinds = post.relay_target_kinds();
         assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
@@ -300,17 +308,46 @@ mod test {
     }
 
     #[test]
-    fn post_relay_kind_jp() {
+    fn post_relay_kind_ja() {
         let post = Post {
             url: Some("http://example.com/post/1"),
             uri: "http://example.com/post/1",
             tags: Some(vec![Tag {
                 name: "スコティッシュ・フォールド・ロングヘアー",
             }]),
+            language: Some("ja"),
         };
         let mut kinds = post.relay_target_kinds();
         assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
         assert_eq!(kinds.next(), Some(ActorKind::TagRelay("sukoteitusiyuhuorudoronguhea".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::LanguageRelay("ja".to_string())));
+        assert_eq!(kinds.next(), None);
+    }
+
+    #[test]
+    fn post_relay_language_long() {
+        let post = Post {
+            url: Some("http://example.com/post/1"),
+            uri: "http://example.com/post/1",
+            tags: None,
+            language: Some("de_CH"),
+        };
+        let mut kinds = post.relay_target_kinds();
+        assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
+        assert_eq!(kinds.next(), Some(ActorKind::LanguageRelay("de".to_string())));
+        assert_eq!(kinds.next(), None);
+    }
+
+    #[test]
+    fn post_relay_language_invalid() {
+        let post = Post {
+            url: Some("http://example.com/post/1"),
+            uri: "http://example.com/post/1",
+            tags: None,
+            language: Some("23q"),
+        };
+        let mut kinds = post.relay_target_kinds();
+        assert_eq!(kinds.next(), Some(ActorKind::InstanceRelay("example.com".to_string())));
         assert_eq!(kinds.next(), None);
     }
 }

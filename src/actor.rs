@@ -5,9 +5,11 @@ use sigh::{PublicKey, Key};
 use crate::activitypub;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[allow(clippy::enum_variant_names)]
 pub enum ActorKind {
     TagRelay(String),
     InstanceRelay(String),
+    LanguageRelay(String),
 }
 
 impl ActorKind {
@@ -16,6 +18,18 @@ impl ActorKind {
             .to_lowercase()
             .replace(char::is_whitespace, "");
         ActorKind::TagRelay(tag)
+    }
+
+    pub fn from_language(language: &str) -> Option<Self> {
+        let language = language.to_lowercase()
+            .chars()
+            .take_while(|c| c.is_alphabetic())
+            .collect::<String>();
+        if language.is_empty() {
+            None
+        } else {
+            Some(ActorKind::LanguageRelay(language))
+        }
     }
 }
 
@@ -32,12 +46,17 @@ impl Actor {
         if uri.starts_with("acct:tag-") {
             let off = "acct:tag-".len();
             let Some(at) = uri.find('@') else { return None; };
-            kind = ActorKind::TagRelay(uri[off..at].to_string());
+            kind = ActorKind::from_tag(&uri[off..at]);
             host = Arc::new(uri[at + 1..].to_string());
         } else if uri.starts_with("acct:instance-") {
             let off = "acct:instance-".len();
             let Some(at) = uri.find('@') else { return None; };
-            kind = ActorKind::InstanceRelay(uri[off..at].to_string());
+            kind = ActorKind::InstanceRelay(uri[off..at].to_lowercase());
+            host = Arc::new(uri[at + 1..].to_string());
+        } else if uri.starts_with("acct:language-") {
+            let off = "acct:language-".len();
+            let Some(at) = uri.find('@') else { return None; };
+            kind = ActorKind::from_language(&uri[off..at])?;
             host = Arc::new(uri[at + 1..].to_string());
         } else if uri.starts_with("https://") {
             uri = &uri[8..];
@@ -53,6 +72,8 @@ impl Actor {
                     ActorKind::TagRelay(topic.to_string()),
                 "instance" =>
                     ActorKind::InstanceRelay(topic.to_string()),
+                "language" =>
+                    ActorKind::LanguageRelay(topic.to_string()),
                 _ =>
                     return None,
             };
@@ -69,6 +90,8 @@ impl Actor {
                 format!("https://{}/tag/{}", self.host, tag),
             ActorKind::InstanceRelay(instance) =>
                 format!("https://{}/instance/{}", self.host, instance),
+            ActorKind::LanguageRelay(language) =>
+                format!("https://{}/language/{}", self.host, language),
         }
     }
 
@@ -86,6 +109,8 @@ impl Actor {
                     format!("#{}", tag),
                 ActorKind::InstanceRelay(instance) =>
                     instance.to_string(),
+                ActorKind::LanguageRelay(language) =>
+                    format!("in {}", language),
             }),
             icon: Some(activitypub::Media {
                 media_type: Some("Image".to_string()),
@@ -107,6 +132,8 @@ impl Actor {
                     format!("tag-{}", tag),
                 ActorKind::InstanceRelay(instance) =>
                     format!("instance-{}", instance),
+                ActorKind::LanguageRelay(language) =>
+                    format!("language-{}", language),
             }),
         }
     }

@@ -90,6 +90,22 @@ async fn get_instance_actor(
         .into_response()
 }
 
+async fn get_language_actor(
+    axum::extract::State(state): axum::extract::State<State>,
+    Path(language): Path<String>
+) -> Response {
+    track_request("GET", "actor", "language");
+    let Some(kind) = actor::ActorKind::from_language(&language) else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let target = actor::Actor {
+        host: state.hostname.clone(),
+        kind,
+    };
+    target.as_activitypub(&state.pub_key)
+        .into_response()
+}
+
 async fn post_tag_relay(
     axum::extract::State(state): axum::extract::State<State>,
     Path(tag): Path<String>,
@@ -110,6 +126,21 @@ async fn post_instance_relay(
     let target = actor::Actor {
         host: state.hostname.clone(),
         kind: actor::ActorKind::InstanceRelay(instance.to_lowercase()),
+    };
+    post_relay(state, endpoint, target).await
+}
+
+async fn post_language_relay(
+    axum::extract::State(state): axum::extract::State<State>,
+    Path(language): Path<String>,
+    endpoint: endpoint::Endpoint<'_>
+) -> Response {
+    let Some(kind) = actor::ActorKind::from_language(&language) else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let target = actor::Actor {
+        host: state.hostname.clone(),
+        kind,
     };
     post_relay(state, endpoint, target).await
 }
@@ -362,8 +393,10 @@ async fn main() {
     let app = Router::new()
         .route("/tag/:tag", get(get_tag_actor).post(post_tag_relay))
         .route("/instance/:instance", get(get_instance_actor).post(post_instance_relay))
+        .route("/language/:language", get(get_language_actor).post(post_language_relay))
         .route("/tag/:tag/outbox", get(outbox))
         .route("/instance/:instance/outbox", get(outbox))
+        .route("/language/:language/outbox", get(outbox))
         .route("/.well-known/webfinger", get(webfinger))
         .route("/.well-known/nodeinfo", get(nodeinfo))
         .route("/api/v1/instance", get(instanceinfo))
