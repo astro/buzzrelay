@@ -104,7 +104,7 @@ struct Job {
 }
 
 fn spawn_worker(client: Arc<reqwest::Client>) -> Sender<Job> {
-    let (tx, mut rx) = channel(8);
+    let (tx, mut rx) = channel(128);
 
     tokio::spawn(async move {
         let mut errors = 0u32;
