@@ -150,18 +150,6 @@ async fn post_relay(
     endpoint: endpoint::Endpoint<'_>,
     target: actor::Actor
 ) -> Response {
-    let remote_actor = match endpoint.remote_actor(&state.client, &state.actor_cache, target.key_id(), state.priv_key.clone()).await {
-        Ok(remote_actor) => remote_actor,
-        Err(e) => {
-            track_request("POST", "relay", "bad_actor");
-            tracing::error!("post_relay bad actor: {e:?}");
-            return (
-                StatusCode::BAD_REQUEST,
-                format!("Bad actor: {:?}", e)
-            ).into_response();
-        }
-    };
-
     if let Some((redis, in_topic)) = &state.redis {
         if let Ok(data) = serde_json::to_vec(&endpoint.payload) {
             if let Err(e) = redis::Cmd::publish(in_topic.as_ref(), data)
@@ -172,6 +160,14 @@ async fn post_relay(
             }
         }
     }
+
+    let remote_actor = endpoint.remote_actor(&state.client, &state.actor_cache, target.key_id(), state.priv_key.clone())
+        .await
+        .map_err(|e| {
+            track_request("POST", "relay", "bad_actor");
+            tracing::error!("post_relay bad actor: {e:?}");
+            e
+        });
 
     let action = match serde_json::from_value::<activitypub::Action<serde_json::Value>>(endpoint.payload.clone()) {
         Ok(action) => action,
@@ -189,6 +185,9 @@ async fn post_relay(
         .and_then(|object_type| object_type.as_str().map(std::string::ToString::to_string));
 
     if action.action_type == "Follow" {
+        let Ok(remote_actor) = remote_actor else {
+            return (StatusCode::BAD_REQUEST, "Invalid actor").into_response();
+        };
         let priv_key = state.priv_key.clone();
         let client = state.client.clone();
         tokio::spawn(async move {
@@ -241,6 +240,9 @@ async fn post_relay(
          "{}"
         ).into_response()
     } else if action.action_type == "Undo" && object_type == Some("Follow".to_string()) {
+        let Ok(remote_actor) = remote_actor else {
+            return (StatusCode::BAD_REQUEST, "Invalid actor").into_response();
+        };
         match state.database.del_follow(
             &remote_actor.id,
             &target.uri(),

@@ -120,6 +120,7 @@ impl<'a> Endpoint<'a> {
 
         let public_key = PublicKey::from_pem(remote_actor.public_key.pem.as_bytes())?;
         if ! (self.signature.verify(&public_key)?) {
+            tracing::error!("Cannot verify signature for {}: {:?}", self.remote_actor_uri, self.payload);
             return Err(Error::SignatureFail(self.remote_actor_uri.clone()));
         }
 
