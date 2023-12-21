@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use axum::{
     async_trait,
-    body::{Bytes, HttpBody},
+    body::{Bytes, Body},
     extract::{FromRef, FromRequest},
-    http::{header::CONTENT_TYPE, Request, StatusCode}, BoxError,
+    http::{header::CONTENT_TYPE, Request, StatusCode},
 };
 use http_digest_headers::DigestHeader;
 use sigh::{Signature, PublicKey, Key, PrivateKey};
@@ -28,17 +28,14 @@ pub struct Endpoint<'a> {
 }
 
 #[async_trait]
-impl<'a, S, B> FromRequest<S, B> for Endpoint<'a>
+impl<'a, S> FromRequest<S> for Endpoint<'a>
 where
-    B: HttpBody + Send + 'static,
-    B::Data: Send,
-    B::Error: Into<BoxError>,
     S: Send + Sync,
     Arc<reqwest::Client>: FromRef<S>,
 {
     type Rejection = (StatusCode, String);
 
-    async fn from_request(req: Request<B>, state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request(req: Request<Body>, state: &S) -> Result<Self, Self::Rejection> {
         // validate content-type
         let content_type = if let Some(content_type) = req.headers()
             .get(CONTENT_TYPE)

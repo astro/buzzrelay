@@ -4,7 +4,7 @@ use axum::{
     response::{IntoResponse, Response},
     routing::get, Json, Router,
 };
-use axum_extra::routing::SpaRouter;
+use tower_http::services::ServeDir;
 use metrics::increment_counter;
 use metrics_util::MetricKindMask;
 use metrics_exporter_prometheus::PrometheusBuilder;
@@ -423,11 +423,11 @@ async fn main() {
             recorder.render().into_response()
         }))
         .with_state(state)
-        .merge(SpaRouter::new("/", "static"));
+        .fallback_service(ServeDir::new("static"));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], config.listen_port));
-    let server = axum::Server::bind(&addr)
-        .serve(app.into_make_service());
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    let server = axum::serve(listener, app.into_make_service());
 
     tracing::info!("serving on {}", addr);
     systemd::daemon::notify(false, [(systemd::daemon::STATE_READY, "1")].iter())

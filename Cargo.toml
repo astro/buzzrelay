@@ -6,20 +6,19 @@ repository = "https://github.com/astro/buzzrelay"
 homepage = "https://relay.fedi.buzz"
 
 [dependencies]
-axum = "0.6"
-axum-macros = "0.3"
-axum-extra = { version = "0.4", features = ["spa"] }
+axum = "0.7"
+tower-http = { version = "0.5", features = ["fs"] }
 tokio = { version = "1", features = ["full", "time"] }
 tracing = "*"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0.9"
-reqwest = { version = "0.11", features = ["json", "stream"] }
+reqwest = { version = "0.12", features = ["json", "stream"] }
 sigh = "1.0"
 http_digest_headers = { version = "0.1.0", default-features = false, features = ["use_openssl"] }
 thiserror = "1"
-http = "0.2"
+http = "1"
 chrono = "0.4"
 eventsource-stream = "0.2"
 futures = "0.3"
