@@ -51,10 +51,10 @@ pub async fn send_raw(
     let t3 = Instant::now();
     histogram!("relay_http_request_duration", t2 - t1);
     if res.status() >= StatusCode::OK && res.status() < StatusCode::MULTIPLE_CHOICES {
-        histogram!("relay_http_response_duration", t3 - t2, "res" => "ok", "host" => host);
+        histogram!("relay_http_response_duration", t3 - t2, "res" => "ok");
         Ok(())
     } else {
-        histogram!("relay_http_response_duration", t3 - t2, "res" => "err", "host" => host);
+        histogram!("relay_http_response_duration", t3 - t2, "res" => "err");
         let response = res.text().await?;
         Err(Error::Response(response))
     }
