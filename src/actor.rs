@@ -84,6 +84,28 @@ impl Actor {
         Some(Actor { host, kind })
     }
 
+    pub fn from_object(action: &activitypub::Action<serde_json::Value>) -> Option<Self> {
+        let action_object = action.object.as_ref()?;
+
+        let mut action_target: Option<String> = None;
+        if let Some(action_object) = action_object.as_str() {
+            action_target = Some(action_object.to_string());
+        }
+        if let Some(action_object_0) = action_object.as_array()
+            .and_then(|action_object| {
+                if action_object.len() == 1 {
+                    action_object.first()
+                } else {
+                    None
+                }
+            }).and_then(|action_object_0| action_object_0.as_str())
+        {
+            action_target = Some(action_object_0.to_string());
+        }
+
+        action_target.and_then(|action_target| Self::from_uri(&action_target))
+    }
+
     pub fn uri(&self) -> String {
         match &self.kind {
             ActorKind::TagRelay(tag) =>

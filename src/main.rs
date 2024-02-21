@@ -148,7 +148,7 @@ async fn post_language_relay(
 async fn post_relay(
     state: State,
     endpoint: endpoint::Endpoint<'_>,
-    target: actor::Actor
+    mut target: actor::Actor
 ) -> Response {
     if let Some((redis, in_topic)) = &state.redis {
         if let Ok(data) = serde_json::to_vec(&endpoint.payload) {
@@ -188,6 +188,13 @@ async fn post_relay(
         let Ok(remote_actor) = remote_actor else {
             return (StatusCode::BAD_REQUEST, "Invalid actor").into_response();
         };
+        if let Some(action_target) = Actor::from_object(&action) {
+            if action_target.host == state.hostname {
+                // A sharedInbox receives the actual follow target in the
+                // `object` field.
+                target = action_target;
+            }
+        }
         let priv_key = state.priv_key.clone();
         let client = state.client.clone();
         tokio::spawn(async move {
@@ -243,6 +250,13 @@ async fn post_relay(
         let Ok(remote_actor) = remote_actor else {
             return (StatusCode::BAD_REQUEST, "Invalid actor").into_response();
         };
+        if let Some(action_target) = Actor::from_object(&action) {
+            if action_target.host == state.hostname {
+                // A sharedInbox receives the actual follow target in the
+                // `object` field.
+                target = action_target;
+            }
+        }
         match state.database.del_follow(
             &remote_actor.id,
             &target.uri(),
