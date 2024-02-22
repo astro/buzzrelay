@@ -188,7 +188,7 @@ async fn post_relay(
         let Ok(remote_actor) = remote_actor else {
             return (StatusCode::BAD_REQUEST, "Invalid actor").into_response();
         };
-        if let Some(action_target) = Actor::from_object(&action) {
+        if let Some(action_target) = action.object.and_then(|object| Actor::from_object(&object)) {
             if action_target.host == state.hostname {
                 // A sharedInbox receives the actual follow target in the
                 // `object` field.
@@ -250,7 +250,10 @@ async fn post_relay(
         let Ok(remote_actor) = remote_actor else {
             return (StatusCode::BAD_REQUEST, "Invalid actor").into_response();
         };
-        if let Some(action_target) = Actor::from_object(&action) {
+        if let Some(action_target) = action.object
+            .and_then(|object| object.get("object")
+                      .and_then(Actor::from_object))
+        {
             if action_target.host == state.hostname {
                 // A sharedInbox receives the actual follow target in the
                 // `object` field.
