@@ -15,6 +15,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Dependencies
+      run: sudo apt-get install -y libsystemd-dev
     - uses: actions/checkout@v3
     - name: Build
       run: cargo build --verbose
