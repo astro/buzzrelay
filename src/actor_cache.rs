@@ -72,7 +72,7 @@ impl ActorCache {
                     .expect("queues.remove");
                 let queue_len = queue.len();
                 let mut notified = 0usize;
-                for tx in queue.into_iter() {
+                for tx in queue {
                     if let Ok(()) = tx.send(result.clone()) {
                         notified += 1;
                     }

@@ -111,8 +111,8 @@ fn spawn_worker(client: Arc<reqwest::Client>) -> Sender<Job> {
         let mut last_request = None;
 
         while let Some(Job { post_url, actor_id, key_id, private_key, body, inbox_url }) = rx.next().await {
-            if errors > 0 && last_request.map_or(false, |last_request|
-                Instant::now() - last_request < Duration::from_secs(10) * errors
+            if errors > 0 && last_request.map_or(false, |last_request: Instant|
+                last_request.elapsed() < Duration::from_secs(10) * errors
             ) {
                 // there have been errors, skip for time proportional
                 // to the number of subsequent errors
@@ -162,13 +162,12 @@ pub fn spawn(
                     continue;
                 }
             };
-            let post_url = match post.url {
-                Some(ref url) => Arc::new(url.to_string()),
+            let post_url = if let Some(url) = post.url {
+                Arc::new(url.to_string())
+            } else {
                 // skip reposts
-                None => {
-                    increment_counter!("relay_posts_total", "action" => "skip");
-                    continue;
-                }
+                increment_counter!("relay_posts_total", "action" => "skip");
+                continue;
             };
             let mut seen_actors = HashSet::new();
             let mut seen_inboxes = HashSet::new();

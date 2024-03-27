@@ -3,7 +3,7 @@ use http_digest_headers::{DigestHeader, DigestMethod};
 pub fn generate_header(body: &[u8]) -> Result<String, ()> {
     let mut digest_header = DigestHeader::new()
         .with_method(DigestMethod::SHA256, body)
-        .map(|h| format!("{}", h))
+        .map(|h| format!("{h}"))
         .map_err(|_| ())?;
 
     // mastodon expects uppercase algo name

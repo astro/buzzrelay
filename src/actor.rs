@@ -126,11 +126,11 @@ impl Actor {
             id: self.uri(),
             name: Some(match &self.kind {
                 ActorKind::TagRelay(tag) =>
-                    format!("#{}", tag),
+                    format!("#{tag}"),
                 ActorKind::InstanceRelay(instance) =>
                     instance.to_string(),
                 ActorKind::LanguageRelay(language) =>
-                    format!("in {}", language),
+                    format!("in {language}"),
             }),
             icon: Some(activitypub::Media {
                 media_type: Some("Image".to_string()),
@@ -149,11 +149,11 @@ impl Actor {
             },
             preferred_username: Some(match &self.kind {
                 ActorKind::TagRelay(tag) =>
-                    format!("tag-{}", tag),
+                    format!("tag-{tag}"),
                 ActorKind::InstanceRelay(instance) =>
-                    format!("instance-{}", instance),
+                    format!("instance-{instance}"),
                 ActorKind::LanguageRelay(language) =>
-                    format!("language-{}", language),
+                    format!("language-{language}"),
             }),
         }
     }

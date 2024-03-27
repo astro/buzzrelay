@@ -37,12 +37,10 @@ where
 
     async fn from_request(req: Request<Body>, state: &S) -> Result<Self, Self::Rejection> {
         // validate content-type
-        let content_type = if let Some(content_type) = req.headers()
+        let Some(content_type) = req.headers()
             .get(CONTENT_TYPE)
             .and_then(|value| value.to_str().ok())
-            .and_then(|value| value.split(';').next()) {
-                content_type
-            } else {
+            .and_then(|value| value.split(';').next()) else {
                 return Err((StatusCode::UNSUPPORTED_MEDIA_TYPE, "No content-type".to_string()));
             };
         if ! (content_type.starts_with("application/json") ||
@@ -57,7 +55,7 @@ where
             .ok_or((StatusCode::BAD_REQUEST, "No signed headers".to_string()))?;
         for header in SIGNATURE_HEADERS_REQUIRED {
             if !signature_headers.iter().any(|h| h == header) {
-                return Err((StatusCode::BAD_REQUEST, format!("Header {:?} not signed", header)));
+                return Err((StatusCode::BAD_REQUEST, format!("Header {header:?} not signed")));
             }
         }
 
@@ -75,10 +73,10 @@ where
         digest_header = digest_header.replace('+', "-")
             .replace('/', "_");
         let digest: DigestHeader = digest_header.parse()
-            .map_err(|e| (StatusCode::BAD_REQUEST, format!("Cannot parse Digest: header: {}", e)))?;
+            .map_err(|e| (StatusCode::BAD_REQUEST, format!("Cannot parse Digest: header: {e}")))?;
         // read body
         let bytes = Bytes::from_request(req, state).await
-            .map_err(|e| (StatusCode::BAD_REQUEST, format!("Body: {}", e)))?;
+            .map_err(|e| (StatusCode::BAD_REQUEST, format!("Body: {e}")))?;
         // validate digest
         if ! digest.verify(&bytes).unwrap_or(false) {
             return Err((StatusCode::BAD_REQUEST, "Digest didn't match".to_string()));

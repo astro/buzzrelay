@@ -31,7 +31,7 @@ impl State {
             database,
             redis: redis.map(|(connection, in_topic)| (connection, Arc::new(in_topic))),
             client: Arc::new(client),
-            actor_cache: Default::default(),
+            actor_cache: ActorCache::default(),
             hostname: Arc::new(config.hostname),
             priv_key,
             pub_key,

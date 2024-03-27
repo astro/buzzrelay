@@ -39,12 +39,9 @@ fn track_request(method: &'static str, controller: &'static str, result: &'stati
 async fn webfinger(
     Query(params): Query<HashMap<String, String>>,
 ) -> Response {
-    let resource = match params.get("resource") {
-        Some(resource) => resource,
-        None => {
-            track_request("GET", "webfinger", "invalid");
-            return StatusCode::NOT_FOUND.into_response();
-        },
+    let Some(resource) = params.get("resource") else {
+        track_request("GET", "webfinger", "invalid");
+        return StatusCode::NOT_FOUND.into_response();
     };
     let Some(target) = Actor::from_uri(resource) else {
         track_request("GET", "webfinger", "not_found");
@@ -176,7 +173,7 @@ async fn post_relay(
             tracing::error!("post_relay bad action: {e:?}");
             return (
                 StatusCode::BAD_REQUEST,
-                format!("Bad action: {:?}", e)
+                format!("Bad action: {e:?}")
             ).into_response();
         }
     };
@@ -275,7 +272,7 @@ async fn post_relay(
                 tracing::error!("del_follow: {}", e);
                 track_request("POST", "relay", "unfollow_error");
                 (StatusCode::INTERNAL_SERVER_ERROR,
-                 format!("{}", e)
+                 format!("{e}")
                  ).into_response()
             }
         }
@@ -288,7 +285,7 @@ async fn post_relay(
     }
 }
 
-/// An empty ActivityStreams outbox just to satisfy the spec
+/// An empty `ActivityStreams` outbox just to satisfy the spec
 async fn outbox() -> Response {
     Json(json!({
         "@context": "https://www.w3.org/ns/activitystreams",
@@ -342,7 +339,7 @@ async fn nodeinfo(axum::extract::State(state): axum::extract::State<State>) -> R
     })).into_response()
 }
 
-/// Expected by AodeRelay
+/// Expected by `AodeRelay`
 async fn instanceinfo() -> Response {
     Json(json!({
         "title": env!("CARGO_PKG_NAME"),
