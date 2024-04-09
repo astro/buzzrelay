@@ -8,6 +8,8 @@ You don't need to run this yourself, just use the instance at
 
 ## Setup
 
+See also: [Notes on an setting up a fediverse relay with FediBuzz on an Ubuntu server.](https://box464.com/posts/fediverse-relays/)
+
 ### Build
 
 NixOS/Flakes users are in luck: not only does this build, it also
