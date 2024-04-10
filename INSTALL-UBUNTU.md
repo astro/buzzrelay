@@ -214,7 +214,44 @@ With the fedi relay public stream enabled, I see the following error stream quit
 
 However, even with that error, content is coming in for at least the hashtag and instance relay types.
 
-# Use It
+# Use it
 And with that, I had a running relay! Check the homepage of your relay for instructions on how to get started. 
 
 Congratulations! 🎉
+
+# Next steps
+Check out the /metrics endpoint at {yourRelayDomain}/metrics for information about the current status of your relay.
+
+Additionally, once you stabilize the settings, you may want to set this up to run automatically after a system reboot.
+
+```ssh
+sudo nano /etc/systemd/system/buzzrelay.service
+```
+
+Edit the new service file, change the working directory to your own location.
+
+```nano
+[Unit]
+Description=Buzzrelay Rust Application
+After=network.target
+
+[Service]
+Type=simple
+User=box464
+WorkingDirectory=/home/box464/buzzrelay
+ExecStart=/home/box464/.cargo/bin/cargo run --release /home/box464/buzzrelay/config.yaml
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Finally, enable the service, start it, and check the status.
+
+```ssh
+sudo systemctl daemon-reload
+sudo systemctl enable buzzrelay.service
+sudo systemctl start buzzrelay.service
+sudo systemctl status buzzrelay.service
+
+```
