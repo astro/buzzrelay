@@ -1,5 +1,5 @@
 # Objective
-Install the FediBuzz relay using a virtual machine running Ubuntu Server 22.04.4 LTS. If you are familiar with NixOS/Flakes, then installing the NixOS module for this is by far the easier route! 
+Install the FediBuzz relay using a virtual machine running Ubuntu Server 22.04.4 LTS. If you are familiar with NixOS/Flakes, then [installing the NixOS module](https://github.com/astro/buzzrelay?tab=readme-ov-file#build) for this is by far the easier route! 
 
 But for those of us unfamiliar with NixOS, here's another option. 
 
@@ -21,9 +21,9 @@ The official fedi.buzz relay traffics around 330 public instance streams for aro
 
 If you're connecting to the fedi.buzz relay and perhaps one or two others on your own relay, this should be more than enough.
 
-One caveat here. FediBuzz has an option for individual users to utilize relays as well by "following" a relay actor, like @tag-dogsofmastodon@relay.com. 
+One caveat here. FediBuzz has an option for individual users to utilize relays as well by "following" a relay actor, like `@tag-dogsofmastodon@relay.com`. 
 
-If you promote this alternative route and many individuals start connecting to your relay, it will cause more outgoing traffic and work, therefore increasing your hardware requirements.
+If you promote this alternative route and many individuals start connecting to your relay, it will cause more outgoing traffic and queue processing, therefore increasing your hardware requirements.
 
 # Domain Name
 As with most fediverse projects, you're going to need a domain. In this particular instance, I used a subdomain of https://relay.{yourdomain}.
@@ -39,13 +39,13 @@ Websockets may not be required, but I enabled it in NGINX Proxy Manager during c
 The following ports need to be open on the server running FediRelay. 
 
 ```
-## Default is 3000 in the FediBuzz docs, but that port was already taken
-sudo ufw allow 3020 
-## Default is 6378 for Redis Cache, but my install was on 6379
-## Uou can probably skip this as redis isn't required.
-sudo ufw allow 6379
+## Default is 3000 in the FediBuzz docs, change as needed
+sudo ufw allow 3000
 ## Allow SSH traffic so you can connect - consider limiting to specific IPs
 sudo ufw allow 22
+
+## When ready...
+sudo ufw enable
 ```
 
 # Initial Server Installs
