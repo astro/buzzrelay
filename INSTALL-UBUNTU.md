@@ -21,7 +21,7 @@ If you promote this alternative route and many individuals start connecting to y
 You'll need a domain or subdomain to run this application. For example, a subdomain of `https://relay.{yourdomain}`.
 
 # SSL Certificate
-An SSL certificate associated to your relay's domain is required. This certificate should be added to your reverse proxy. 
+An SSL certificate associated to your relay's domain name is required. This certificate should be added to your reverse proxy. 
 
 Additionally, ensure the TLS configuration is properly set up to facilitate secure connections. 
 
