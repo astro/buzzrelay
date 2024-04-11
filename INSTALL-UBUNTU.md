@@ -33,23 +33,17 @@ sudo apt-get install pkg-config libssl-dev libsystemd-dev git cargo curl
 ## Rust and related tooling install
 Ensure Rust is installed on your server. Ubuntu has a rustc installation included by default, but it is likely not the latest version. In addition, you may prefer to use rustup to manage your  install. Check out [the official installation guide](https://www.rust-lang.org/tools/install).
 
-## Pull GitHub Repo 
-```
-git clone https://github.com/astro/buzzrelay.git
-```
 
 ## PostgreSQL
 A PostgreSQL database is needed for this application. This [installation guide](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-22-04) will assist with the initial install.
 
-Additionally, you'll have to allow for password authentication. [This guide](https://medium.com/@syafiqza/configuring-postgresql-authentication-in-linux-from-peer-to-password-1bde0445c4da) walks you through the process.
-
-Create the relay user for the database. Specifically this command creates a user named relay and then prompts for a password.
+Create the relay user for the database. This command creates a user named relay and then prompts for a password.
 
 ```
 sudo -u postgres createuser -P relay
 ```
 
-Then create the database and grant all prviliges to the relay user. 
+Then create the database and grant all privileges to the relay user. 
 
 ```
 sudo -u postgres psql 
@@ -79,7 +73,18 @@ It's not necessary to install this, it is not used by the core relay. Just comme
 
 This was used if you are going to host the page shown at [https://fedi.buzz](https://fedi.buzz) which doesn't come with this relay configuration.
 
+## Pull GitHub Repo 
+```
+git clone https://github.com/astro/buzzrelay.git
+```
+
 # Update config.yaml
+
+Move into the project folder and open the config.yaml
+
+```shell
+sudo vim config.yaml
+```
 
 ## Streams
 * Leave the fedibuzz stream as is.
@@ -127,6 +132,8 @@ Update if necessary for your proxy configuration.
 
 ### Private Key File
 Generate a new RSA key pair for signing ActivityPub messages. Note using this command also sets the appropriate permissions values.
+
+Run these commands from the root of the project.
 
 ```bash
 openssl genrsa -out private-key.pem 4096 
