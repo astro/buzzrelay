@@ -21,7 +21,11 @@ If you promote this alternative route and many individuals start connecting to y
 You'll need a domain or subdomain to run this application. For example, a subdomain of `https://relay.{yourdomain}`.
 
 # SSL Certificate
-You'll need an SSL certificate for your domain. 
+An SSL certificate associated to your relay's domain is required. This certificate should be added to your reverse proxy. 
+
+Additionally, ensure the TLS configuration is properly set up to facilitate secure connections. 
+
+Please refer to your reverse proxy's documentation for the specific steps required to complete this process.
 
 # Initial Server Installs
 These packages are required for rust / cargo to work.
