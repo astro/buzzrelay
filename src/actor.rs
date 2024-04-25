@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use deunicode::deunicode;
+use serde_json::json;
 use sigh::{PublicKey, Key};
 
 use crate::activitypub;
@@ -121,7 +122,10 @@ impl Actor {
 
     pub fn as_activitypub(&self, pub_key: &PublicKey) -> activitypub::Actor {
         activitypub::Actor {
-            jsonld_context: serde_json::Value::String("https://www.w3.org/ns/activitystreams".to_string()),
+            jsonld_context: json!([
+                "https://www.w3.org/ns/activitystreams",
+                "https://w3id.org/security/v1"
+            ]),
             actor_type: "Service".to_string(),
             id: self.uri(),
             name: Some(match &self.kind {
