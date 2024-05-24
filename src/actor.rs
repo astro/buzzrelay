@@ -46,17 +46,17 @@ impl Actor {
         let host;
         if uri.starts_with("acct:tag-") {
             let off = "acct:tag-".len();
-            let Some(at) = uri.find('@') else { return None; };
+            let at = uri.find('@')?;
             kind = ActorKind::from_tag(&uri[off..at]);
             host = Arc::new(uri[at + 1..].to_string());
         } else if uri.starts_with("acct:instance-") {
             let off = "acct:instance-".len();
-            let Some(at) = uri.find('@') else { return None; };
+            let at = uri.find('@')?;
             kind = ActorKind::InstanceRelay(uri[off..at].to_lowercase());
             host = Arc::new(uri[at + 1..].to_string());
         } else if uri.starts_with("acct:language-") {
             let off = "acct:language-".len();
-            let Some(at) = uri.find('@') else { return None; };
+            let at = uri.find('@')?;
             kind = ActorKind::from_language(&uri[off..at])?;
             host = Arc::new(uri[at + 1..].to_string());
         } else if uri.starts_with("https://") {
