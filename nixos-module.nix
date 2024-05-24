@@ -57,7 +57,7 @@
   config =
     let
       cfg = config.services.buzzrelay;
-      configFile = builtins.toFile "buzzrelay.toml" (
+      configFile = builtins.toFile "buzzrelay.yaml" (
         lib.generators.toYAML {} {
           streams = cfg.streams;
           hostname = cfg.hostName;
