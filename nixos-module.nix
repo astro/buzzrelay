@@ -94,6 +94,7 @@
         systemd.services.buzzrelay = {
           wantedBy = [ "multi-user.target" ];
           after = [ "postgresql.service" "network-online.target" ];
+          wants = [ "network-online.target" ];
           environment.RUST_LOG = "buzzrelay=${cfg.logLevel}";
           serviceConfig = {
             Type = "notify";
