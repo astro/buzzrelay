@@ -27,11 +27,11 @@
     };
     user = mkOption {
       type = types.str;
-      default = "relay";
+      default = "buzzrelay";
     };
     group = mkOption {
       type = types.str;
-      default = "relay";
+      default = "buzzrelay";
     };
     logLevel = mkOption {
       type = types.enum [ "ERROR" "WARN" "INFO" "DEBUG" "TRACE" ];
@@ -87,15 +87,14 @@
           ensureDatabases = [ cfg.database ];
           ensureUsers = [ {
             name = cfg.user;
-            ensurePermissions = {
-              "DATABASE ${cfg.database}" = "ALL PRIVILEGES";
-            };
+            ensureDBOwnership = true;
           } ];
         };
 
         systemd.services.buzzrelay = {
           wantedBy = [ "multi-user.target" ];
           after = [ "postgresql.service" "network-online.target" ];
+          wants = [ "network-online.target" ];
           environment.RUST_LOG = "buzzrelay=${cfg.logLevel}";
           serviceConfig = {
             Type = "notify";

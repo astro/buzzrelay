@@ -10,7 +10,6 @@
 
   outputs = { self, nixpkgs, utils, naersk }:
     let
-      inherit (nixpkgs) lib;
       makeBuzzrelay = pkgs:
         let
           naersk-lib = pkgs.callPackage naersk { };
