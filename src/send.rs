@@ -49,12 +49,15 @@ pub async fn send_raw(
     let res = client.execute(req)
         .await?;
     let t3 = Instant::now();
-    histogram!("relay_http_request_duration", t2 - t1);
+    histogram!("relay_http_request_duration")
+        .record(t2 - t1);
     if res.status() >= StatusCode::OK && res.status() < StatusCode::MULTIPLE_CHOICES {
-        histogram!("relay_http_response_duration", t3 - t2, "res" => "ok");
+        histogram!("relay_http_response_duration", "res" => "ok")
+            .record(t3 - t2);
         Ok(())
     } else {
-        histogram!("relay_http_response_duration", t3 - t2, "res" => "err");
+        histogram!("relay_http_response_duration", "res" => "err")
+            .record(t3 - t2);
         let response = res.text().await?;
         Err(Error::Response(response))
     }

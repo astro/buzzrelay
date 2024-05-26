@@ -1,6 +1,6 @@
 use std::{sync::Arc, collections::{HashSet, HashMap}, time::{Duration, Instant}};
 use futures::{channel::mpsc::{channel, Sender}, StreamExt};
-use metrics::{increment_counter, histogram};
+use metrics::{counter, histogram};
 use serde::Deserialize;
 use serde_json::json;
 use sigh::PrivateKey;
@@ -104,7 +104,7 @@ struct Job {
 }
 
 fn spawn_worker(client: Arc<reqwest::Client>) -> Sender<Job> {
-    let (tx, mut rx) = channel(128);
+    let (tx, mut rx) = channel(512);
 
     tokio::spawn(async move {
         let mut errors = 0u32;
@@ -166,7 +166,8 @@ pub fn spawn(
                 Arc::new(url.to_string())
             } else {
                 // skip reposts
-                increment_counter!("relay_posts_total", "action" => "skip");
+                counter!("relay_posts_total", "action" => "skip")
+                    .increment(1);
                 continue;
             };
             let mut seen_actors = HashSet::new();
@@ -226,12 +227,14 @@ pub fn spawn(
                 seen_actors.insert(actor);
             }
             if seen_inboxes.is_empty() {
-                increment_counter!("relay_posts_total", "action" => "no_relay");
+                counter!("relay_posts_total", "action" => "no_relay")
+                    .increment(1);
             } else {
-                increment_counter!("relay_posts_total", "action" => "relay");
+                counter!("relay_posts_total", "action" => "relay")
+                    .increment(1);
             }
             let t2 = Instant::now();
-            histogram!("relay_post_duration", t2 - t1);
+            histogram!("relay_post_duration").record(t2 - t1);
         }
     });
 }

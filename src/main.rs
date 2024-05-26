@@ -5,7 +5,7 @@ use axum::{
     routing::get, Json, Router,
 };
 use tower_http::services::ServeDir;
-use metrics::increment_counter;
+use metrics::counter;
 use metrics_util::MetricKindMask;
 use metrics_exporter_prometheus::PrometheusBuilder;
 use serde_json::json;
@@ -33,7 +33,8 @@ use state::State;
 
 
 fn track_request(method: &'static str, controller: &'static str, result: &'static str) {
-    increment_counter!("api_http_requests_total", "controller" => controller, "method" => method, "result" => result);
+    counter!("api_http_requests_total", "controller" => controller, "method" => method, "result" => result)
+        .increment(1);
 }
 
 async fn webfinger(
