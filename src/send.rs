@@ -6,6 +6,7 @@ use http::StatusCode;
 use metrics::histogram;
 use serde::Serialize;
 use sigh::{PrivateKey, SigningConfig, alg::RsaSha256};
+use tokio::task::spawn_blocking;
 use crate::{digest, error::Error};
 
 pub async fn send<T: Serialize>(
@@ -42,12 +43,18 @@ pub async fn send_raw(
         .header("digest", digest_header)
         .body(body.as_ref().clone())?;
     let t1 = Instant::now();
-    SigningConfig::new(RsaSha256, private_key, key_id)
-        .sign(&mut req)?;
+    let private_key = private_key.clone();
+    let key_id = key_id.to_string();
+    let req = spawn_blocking(move || {
+        SigningConfig::new(RsaSha256, &private_key, &key_id).sign(&mut req)?;
+        Ok(req)
+    })
+    .await
+    .map_err(|e| Error::Response(format!("{e}")))?
+    .map_err(|e: sigh::Error| Error::Response(format!("{e}")))?;
     let t2 = Instant::now();
     let req: reqwest::Request = req.try_into()?;
-    let res = client.execute(req)
-        .await?;
+    let res = client.execute(req).await?;
     let t3 = Instant::now();
     histogram!("relay_http_request_duration")
         .record(t2 - t1);

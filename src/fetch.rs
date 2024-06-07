@@ -2,6 +2,7 @@ use std::time::SystemTime;
 use http::StatusCode;
 use serde::de::DeserializeOwned;
 use sigh::{PrivateKey, SigningConfig, alg::RsaSha256};
+use tokio::task::spawn_blocking;
 use crate::{digest, error::Error};
 
 pub async fn authorized_fetch<T>(
@@ -26,11 +27,17 @@ where
         .header("accept", "application/activity+json")
         .header("digest", digest_header)
         .body(vec![])?;
-    SigningConfig::new(RsaSha256, private_key, key_id)
-        .sign(&mut req)?;
+    let private_key = private_key.clone();
+    let key_id = key_id.to_string();
+    let req = spawn_blocking(move || {
+        SigningConfig::new(RsaSha256, &private_key, &key_id).sign(&mut req)?;
+        Ok(req)
+    })
+    .await
+    .map_err(|e| Error::Response(format!("{e}")))?
+    .map_err(|e: sigh::Error| Error::Response(format!("{e}")))?;
     let req: reqwest::Request = req.try_into()?;
-    let res = client.execute(req)
-        .await?;
+    let res = client.execute(req).await?;
     if res.status() >= StatusCode::OK && res.status() < StatusCode::MULTIPLE_CHOICES {
         Ok(res.json().await?)
     } else {
