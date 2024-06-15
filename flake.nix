@@ -54,7 +54,7 @@
             nativeBuildInputs = [
               pkg-config
               openssl systemd
-              cargo rustc rustfmt rustPackages.clippy rust-analyzer
+              cargo rustc rustfmt rustPackages.clippy rust-analyzer cargo-outdated
             ];
             RUST_SRC_PATH = rustPlatform.rustLibSrc;
           };
