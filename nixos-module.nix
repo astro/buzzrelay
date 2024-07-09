@@ -2,6 +2,10 @@
 { config, lib, pkgs, ... }: {
   options.services.buzzrelay = with lib; {
     enable = mkEnableOption "Enable Fedi.buzz relay";
+    package = mkOption {
+      type = types.package;
+      default = self.packages.${pkgs.system}.buzzrelay;
+    };
     streams = mkOption {
       type = with types; listOf str;
       default = [
@@ -73,7 +77,7 @@
                   }
                   else null;
         });
-      inherit (self.packages.${pkgs.system}) buzzrelay;
+      buzzrelay = cfg.package;
     in
       lib.mkIf cfg.enable {
         users.users.${cfg.user} = {
