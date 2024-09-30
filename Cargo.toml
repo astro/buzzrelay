@@ -7,7 +7,7 @@ homepage = "https://relay.fedi.buzz"
 
 [dependencies]
 axum = "0.7"
-tower-http = { version = "0.6", features = ["fs"] }
+tower-http = { version = "0.5", features = ["fs"] }
 tokio = { version = "1", features = ["full", "time"] }
 tracing = "*"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
