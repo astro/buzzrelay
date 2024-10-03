@@ -151,7 +151,7 @@ async fn post_relay(
     if let Some((redis, in_topic)) = &state.redis {
         if let Ok(data) = serde_json::to_vec(&endpoint.payload) {
             if let Err(e) = redis::Cmd::publish(in_topic.as_ref(), data)
-                .query_async::<_, redis::Value>(&mut redis.clone())
+                .query_async::<redis::Value>(&mut redis.clone())
                 .await
             {
                 tracing::error!("redis publish: {}", e);
