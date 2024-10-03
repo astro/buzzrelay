@@ -55,8 +55,12 @@ pub fn spawn(hosts: impl Iterator<Item = impl Into<String>>) -> Receiver<String>
                         stream.for_each(|post| async {
                             tx.send(post).await.unwrap();
                         }).await,
-                    Err(e) =>
-                        tracing::error!("stream: {:?}", e),
+                    Err(StreamError::Http(e)) =>
+                        tracing::error!("stream http error: {:?}", e),
+                    Err(StreamError::HttpStatus(status)) =>
+                        tracing::error!("stream http status: {:?}", status),
+                    Err(StreamError::InvalidContentType) =>
+                        tracing::error!("stream invalid content-type"),
                 }
 
                 sleep(Duration::from_secs(1)).await;
