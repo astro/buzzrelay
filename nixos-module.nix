@@ -4,7 +4,7 @@
     enable = mkEnableOption "Enable Fedi.buzz relay";
     package = mkOption {
       type = types.package;
-      default = self.packages.${pkgs.system}.buzzrelay;
+      default = self.packages.${pkgs.stdenv.system}.buzzrelay;
     };
     streams = mkOption {
       type = with types; listOf str;
@@ -103,7 +103,7 @@
           serviceConfig = {
             Type = "notify";
             WorkingDirectory = "${buzzrelay}/share/buzzrelay";
-            ExecStart = "${buzzrelay}/bin/buzzrelay ${lib.escapeShellArg configFile}";
+            ExecStart = "${lib.getExe buzzrelay} ${lib.escapeShellArg configFile}";
             User = cfg.user;
             Group = cfg.group;
             ProtectSystem = "full";
