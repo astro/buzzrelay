@@ -32,7 +32,10 @@
                 -D warnings \
                 -A clippy::nonminimal_bool''
             ];
-          meta.description = "The buzzing ActivityPub relay";
+          meta = {
+            description = "The buzzing ActivityPub relay";
+            mainProgram = "buzzrelay";
+          };
         };
     in
     utils.lib.eachDefaultSystem
