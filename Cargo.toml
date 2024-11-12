@@ -17,7 +17,7 @@ serde_yaml = "0.9"
 reqwest = { version = "0.12", features = ["json", "stream", "hickory-dns", "rustls-tls"] }
 sigh = "1.0"
 http_digest_headers = { version = "0.1.0", default-features = false, features = ["use_openssl"] }
-thiserror = "2"
+thiserror = "1"
 http = "1"
 chrono = "0.4"
 eventsource-stream = "0.2"
