@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use axum::{
-    async_trait,
     body::{Bytes, Body},
     extract::{FromRef, FromRequest},
     http::{header::CONTENT_TYPE, Request, StatusCode},
@@ -27,7 +26,6 @@ pub struct Endpoint<'a> {
     pub remote_actor_uri: String,
 }
 
-#[async_trait]
 impl<'a, S> FromRequest<S> for Endpoint<'a>
 where
     S: Send + Sync,
