@@ -31,4 +31,4 @@ deunicode = "1.4"
 urlencoding = "2"
 httpdate = "1"
 redis = { version = "0.28", features = ["tokio-comp", "connection-manager"] }
-lru = "0.12"
+lru = "0.13"
