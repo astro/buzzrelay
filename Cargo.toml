@@ -6,7 +6,7 @@ repository = "https://github.com/astro/buzzrelay"
 homepage = "https://relay.fedi.buzz"
 
 [dependencies]
-axum = "0.8"
+axum = "0.7"
 tower-http = { version = "0.6", features = ["fs"] }
 tokio = { version = "1", features = ["full", "time"] }
 tracing = "*"
@@ -25,10 +25,10 @@ futures = "0.3"
 tokio-postgres = "0.7"
 systemd = "0.10"
 metrics = "0.24"
-metrics-util = "0.19"
+metrics-util = "0.18"
 metrics-exporter-prometheus = "0.16"
 deunicode = "1.4"
 urlencoding = "2"
 httpdate = "1"
-redis = { version = "0.28", features = ["tokio-comp", "connection-manager"] }
+redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
 lru = "0.12"
