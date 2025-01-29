@@ -88,7 +88,7 @@ where
             return Err((StatusCode::BAD_REQUEST, "Actor missing".to_string()));
         };
 
-        return Ok(Endpoint { payload, signature, remote_actor_uri });
+        Ok(Endpoint { payload, signature, remote_actor_uri })
     }
 }
 
