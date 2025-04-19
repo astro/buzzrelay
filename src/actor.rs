@@ -17,7 +17,8 @@ impl ActorKind {
     pub fn from_tag(tag: &str) -> Self {
         let tag = deunicode(tag)
             .to_lowercase()
-            .replace(char::is_whitespace, "");
+            .replace(char::is_whitespace, "")
+            .replace('-', "");
         ActorKind::TagRelay(tag)
     }
 
