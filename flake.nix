@@ -26,10 +26,10 @@
             mkdir -p $out/share/buzzrelay
             cp -r static $out/share/buzzrelay/
           '';
-          postCheck =
-              ''cargo clippy --all --all-features --tests -- \
-                -D warnings \
-                -A clippy::nonminimal_bool'';
+          postCheck = ''
+            cargo clippy --all --all-features --tests -- \
+              -D warnings
+          '';
           meta = {
             description = "The buzzing ActivityPub relay";
             mainProgram = "buzzrelay";
