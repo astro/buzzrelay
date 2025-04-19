@@ -111,7 +111,7 @@ fn spawn_worker(client: Arc<reqwest::Client>) -> Sender<Job> {
         let mut last_request = None;
 
         while let Some(Job { post_url, actor_id, key_id, private_key, body, inbox_url }) = rx.next().await {
-            if errors > 0 && last_request.map_or(false, |last_request: Instant|
+            if errors > 0 && last_request.is_some_and(|last_request: Instant|
                 last_request.elapsed() < Duration::from_secs(10) * errors
             ) {
                 // there have been errors, skip for time proportional

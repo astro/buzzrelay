@@ -25,7 +25,7 @@ async fn run(url: &str) -> Result<impl Stream<Item = String>, StreamError> {
     }
     let ct = res.headers().get("content-type")
         .and_then(|c| c.to_str().ok());
-    if ct.map_or(true, |ct| ct != "text/event-stream") {
+    if ct != Some("text/event-stream") {
         return Err(StreamError::InvalidContentType);
     }
 

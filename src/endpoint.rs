@@ -26,7 +26,7 @@ pub struct Endpoint<'a> {
     pub remote_actor_uri: String,
 }
 
-impl<'a, S> FromRequest<S> for Endpoint<'a>
+impl<S> FromRequest<S> for Endpoint<'_>
 where
     S: Send + Sync,
     Arc<reqwest::Client>: FromRef<S>,
@@ -92,7 +92,7 @@ where
     }
 }
 
-impl<'a> Endpoint<'a> {
+impl Endpoint<'_> {
     /// Validates the requesting actor
     pub async fn remote_actor(
         &self,
