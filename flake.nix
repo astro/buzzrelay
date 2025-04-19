@@ -2,36 +2,34 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     utils.url = "github:numtide/flake-utils";
-    naersk = {
-      url = "github:nix-community/naersk/master";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
-  outputs = { self, nixpkgs, utils, naersk }:
+  outputs = { self, nixpkgs, utils }:
     let
       makeBuzzrelay = pkgs:
-        let
-          naersk-lib = pkgs.callPackage naersk { };
-        in
-        naersk-lib.buildPackage {
+        pkgs.rustPlatform.buildRustPackage rec {
           pname = "buzzrelay";
-          version = "${toString (self.sourceInfo.revCount or 0)}-${self.sourceInfo.shortRev or "dirty"}";
-          root = ./.;
-          nativeBuildInputs = with pkgs; [ pkg-config ];
+          version = (
+            pkgs.lib.importTOML ./Cargo.toml
+          ).package.version + "-${toString (self.sourceInfo.revCount or 0)}-${self.sourceInfo.shortRev or "dirty"}";
+          src = pkgs.runCommand "${pname}-${version}-src" {
+            preferLocalBuild = true;
+          } ''
+            mkdir $out
+            cd ${self}
+            cp -ar Cargo.{toml,lock} static src $out/
+          '';
+          cargoLock.lockFile = ./Cargo.lock;
+          nativeBuildInputs = with pkgs; [ pkg-config rustPackages.clippy ];
           buildInputs = with pkgs; [ openssl systemd ];
           postInstall = ''
             mkdir -p $out/share/buzzrelay
             cp -r static $out/share/buzzrelay/
           '';
-          checkInputs = [ pkgs.rustPackages.clippy ];
-          doCheck = true;
-          cargoTestCommands = x:
-            x ++ [
+          postCheck =
               ''cargo clippy --all --all-features --tests -- \
                 -D warnings \
-                -A clippy::nonminimal_bool''
-            ];
+                -A clippy::nonminimal_bool'';
           meta = {
             description = "The buzzing ActivityPub relay";
             mainProgram = "buzzrelay";
