@@ -31,7 +31,7 @@ deunicode = "1.4"
 urlencoding = "2"
 httpdate = "1"
 redis = { version = "0.29", features = ["tokio-comp", "connection-manager"] }
-lru = "0.14"
+lru = "0.16"
 
 [profile.release]
 lto = true
