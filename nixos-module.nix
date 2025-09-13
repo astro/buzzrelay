@@ -97,6 +97,7 @@
 
         systemd.services.buzzrelay = {
           wantedBy = [ "multi-user.target" ];
+          # TODO: change postgresql.service to postgresql.target on 25.11
           after = [ "postgresql.service" "network-online.target" ];
           wants = [ "network-online.target" ];
           environment.RUST_LOG = "buzzrelay=${cfg.logLevel}";
