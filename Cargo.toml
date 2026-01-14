@@ -14,7 +14,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0.9"
-reqwest = { version = "0.12", features = ["json", "stream", "hickory-dns", "rustls-tls"] }
+reqwest = { version = "0.13", features = ["json", "stream", "hickory-dns"] }
 sigh = "1.0"
 http_digest_headers = { version = "0.1.0", default-features = false, features = ["use_openssl"] }
 thiserror = "2"
@@ -26,11 +26,11 @@ tokio-postgres = "0.7"
 systemd = "0.10"
 metrics = "0.24"
 metrics-util = "0.20"
-metrics-exporter-prometheus = "0.17"
+metrics-exporter-prometheus = "0.18"
 deunicode = "1.4"
 urlencoding = "2"
 httpdate = "1"
-redis = { version = "0.32", features = ["tokio-comp", "connection-manager"] }
+redis = { version = "1", features = ["tokio-comp", "connection-manager"] }
 lru = "0.16"
 
 [profile.release]
