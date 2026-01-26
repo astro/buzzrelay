@@ -29,15 +29,11 @@ pub async fn send_raw(
     private_key: &PrivateKey,
     body: Arc<Vec<u8>>,
 ) -> Result<(), Error> {
-    let url = reqwest::Url::parse(uri)
-        .map_err(|_| Error::InvalidUri)?;
-    let host = format!("{}", url.host().ok_or(Error::InvalidUri)?);
     let digest_header = digest::generate_header(&body)
         .map_err(|()| Error::Digest)?;
     let mut req = http::Request::builder()
         .method("POST")
         .uri(uri)
-        .header("host", &host)
         .header("content-type", "application/activity+json")
         .header("date", httpdate::fmt_http_date(SystemTime::now()))
         .header("digest", digest_header)
