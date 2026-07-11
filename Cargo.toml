@@ -7,7 +7,7 @@ homepage = "https://relay.fedi.buzz"
 
 [dependencies]
 axum = "0.8"
-tower-http = { version = "0.6", features = ["fs"] }
+tower-http = { version = "0.7", features = ["fs"] }
 tokio = { version = "1", features = ["full", "time"] }
 tracing = "*"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
@@ -31,7 +31,7 @@ deunicode = "1.4"
 urlencoding = "2"
 httpdate = "1"
 redis = { version = "1", features = ["tokio-comp", "connection-manager"] }
-lru = "0.16"
+lru = "0.18"
 
 [profile.release]
 lto = true
