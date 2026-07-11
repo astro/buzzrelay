@@ -133,9 +133,9 @@ impl Actor {
                 ActorKind::TagRelay(tag) =>
                     format!("#{tag}"),
                 ActorKind::InstanceRelay(instance) =>
-                    instance.to_string(),
+                    format!("Relay for {instance}"),
                 ActorKind::LanguageRelay(language) =>
-                    format!("in {language}"),
+                    format!("Relay for language {language}"),
             }),
             icon: Some(activitypub::Media {
                 media_type: Some("Image".to_string()),
