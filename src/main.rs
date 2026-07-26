@@ -288,13 +288,16 @@ async fn post_relay(
 
 /// An empty `ActivityStreams` outbox just to satisfy the spec
 async fn outbox() -> Response {
-    Json(json!({
-        "@context": "https://www.w3.org/ns/activitystreams",
-        "summary": "buzzrelay stub outbox",
-        "type": "OrderedCollection",
-        "totalItems": 0,
-        "orderedItems": []
-    })).into_response()
+    (
+        [("content-type", "application/activity+json")],
+        Json(json!({
+            "@context": "https://www.w3.org/ns/activitystreams",
+            "summary": "buzzrelay stub outbox",
+            "type": "OrderedCollection",
+            "totalItems": 0,
+            "orderedItems": []
+        })),
+    ).into_response()
 }
 
 async fn nodeinfo(axum::extract::State(state): axum::extract::State<State>) -> Response {
